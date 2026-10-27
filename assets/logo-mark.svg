@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Rays -->
+  <g stroke="#3fb4f0" stroke-width="3" stroke-linecap="round">
+    <path d="M32 6V1.5"/>
+    <path d="M20.5 9.6 17.7 5.5M43.5 9.6l2.8-4.1"/>
+    <path d="M13.2 19.2 8.5 17.4M50.8 19.2l4.7-1.8"/>
+    <path d="M12.7 31.2 7.9 32.5M51.3 31.2l4.8 1.3"/>
+  </g>
+  <!-- Bulb: left half (circuit), right half (light) -->
+  <path d="M32 10A16 16 0 0 0 23 39.2V44h9z" fill="#1e88d6"/>
+  <path d="M32 10a16 16 0 0 1 9 29.2V44h-9z" fill="#7fd0f7"/>
+  <g fill="none" stroke="#bfe8fc" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 20h4l2 2M22 27h5v4h3M25 35h5"/>
+  </g>
+  <g fill="#bfe8fc">
+    <circle cx="30.5" cy="22.5" r="1.3"/><circle cx="30.5" cy="31" r="1.3"/><circle cx="24" cy="35" r="1.3"/>
+  </g>
+  <g fill="none" stroke="#1e88d6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 40V27l4-4M36 32l-2.5-2.5M36 30l3.5 3"/>
+  </g>
+  <g fill="#1e88d6">
+    <circle cx="40.5" cy="22.5" r="1.5"/><circle cx="33" cy="29" r="1.3"/><circle cx="40" cy="33.5" r="1.3"/>
+  </g>
+  <!-- Base -->
+  <rect x="23.5" y="46" width="17" height="3.2" rx="1.6" fill="#3fb4f0"/>
+  <rect x="25.5" y="51" width="13" height="3.2" rx="1.6" fill="#3fb4f0"/>
+  <rect x="28.5" y="56" width="7" height="3" rx="1.5" fill="#3fb4f0"/>
+</svg>
