@@ -9,6 +9,10 @@
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
+  <div class="announcement">
+    <div class="container">Vaste prijs vooraf · Snel ingepland · Netjes opgeleverd</div>
+  </div>
+
   <header class="site-header">
     <div class="container header-inner">
       <a href="index.html" class="logo">
@@ -46,10 +50,34 @@
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-inner">
-      <p>© AWM Elektrotechniek</p>
-      <nav><a href="bedrijfsgegevens.html">Bedrijfsgegevens</a><a href="privacy.html">Privacy</a></nav>
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <span class="logo-text"><strong>AWM</strong><small>Elektrotechniek</small></span>
+        <p>Elektricien uit de regio voor particulieren, verhuurders en bedrijven.</p>
+      </div>
+      <div>
+        <h4>Menu</h4>
+        <nav>
+          <a href="index.html#diensten">Diensten</a>
+          <a href="index.html#werkwijze">Werkwijze</a>
+          <a href="index.html#over-ons">Over ons</a>
+          <a href="index.html#contact">Offerte aanvragen</a>
+        </nav>
+      </div>
+      <div>
+        <h4>Informatie</h4>
+        <nav>
+          <a href="bedrijfsgegevens.html">Bedrijfsgegevens</a>
+          <a href="privacy.html">Privacyverklaring</a>
+          <a href="mailto:info@awm-elektrotechniek.nl">info@awm-elektrotechniek.nl</a>
+        </nav>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>© <span id="year"></span> AWM Elektrotechniek · KvK [nummer] · btw [nummer]</p>
     </div>
   </footer>
+
+  <script src="assets/main.js"></script>
 </body>
 </html>
