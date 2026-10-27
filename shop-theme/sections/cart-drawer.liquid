@@ -1,0 +1,242 @@
+{%- render 'cart-drawer' -%}
+
+{% schema %}
+{
+  "name": "Cart drawer",
+  "max_blocks": 4,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enable_show_variant_title",
+      "label": "Show variant title",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_compare_at_price",
+      "label": "Show compare at price",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_total_savings",
+      "label": "Show savings",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "savings_text",
+      "label": "Savings text",
+      "default": "(You save [savings])",
+      "info": "Use [savings] to display the amount saved"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product_upsell",
+      "name": "Product upsell",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "upsell_title",
+          "label": "Heading",
+          "default": "Add these products to your cart"
+        },
+        {
+          "type": "color",
+          "id": "button_color",
+          "label": "Toggle or button color",
+          "default": "#000"
+        },
+        {
+          "type": "color",
+          "id": "button_label_color",
+          "label": "Button label color",
+          "default": "#fff"
+        },
+        {
+          "type": "product_list",
+          "id": "upsell_products",
+          "label": "Upsell Products",
+          "limit": 3
+        }
+      ]
+    },
+    {
+      "type": "discount",
+      "name": "Discount",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "color",
+          "id": "button_color",
+          "label": "Button color",
+          "default": "#000"
+        },
+        {
+          "type": "color",
+          "id": "button_label_color",
+          "label": "Button label color",
+          "default": "#fff"
+        },
+        {
+          "type": "text",
+          "id": "button_label",
+          "label": "Button label",
+          "default": "Apply"
+        }
+      ]
+    },
+    {
+      "type": "countdown",
+      "name": "Countdown",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "color",
+          "id": "background_color",
+          "label": "Background color",
+          "default": "#000"
+        },
+        {
+          "type": "color",
+          "id": "text_color",
+          "label": "Text color",
+          "default": "#fff"
+        },
+        {
+          "type": "range",
+          "id": "cart_countdown_time",
+          "label": "Countdown starting time",
+          "default": 5,
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "unit": "min"
+        },
+        {
+          "type": "inline_richtext",
+          "id": "cart_countdown_title",
+          "label": "Countdown title",
+          "default": "Cart reserved for"
+        }
+      ]
+    },
+    {
+      "type": "free_shipping_bar",
+      "name": "Free shipping bar",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "color",
+          "id": "progress",
+          "label": "Progress bar color",
+          "default": "#000"
+        },
+        {
+          "type": "number",
+          "id": "free_shipping_goal",
+          "label": "Free shipping goal",
+          "default": 100
+        },
+        {
+          "type": "text",
+          "id": "free_shipping_message",
+          "label": "Free shipping message",
+          "default": "You're [amount] away from free shipping!"
+        },
+        {
+          "type": "text",
+          "id": "free_shipping_success_message",
+          "label": "Free shipping success message",
+          "default": "Congrats! You get FREE shipping!"
+        }
+      ]
+    },
+    {
+      "type": "social_proof",
+      "name": "Social proof",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "header",
+          "content": "Rating stars"
+        },
+        {
+          "type": "checkbox",
+          "id": "enable_rating_stars",
+          "label": "Enable rating stars"
+        },
+        {
+          "type": "color",
+          "id": "star_color",
+          "default": "#ffcc00",
+          "label": "Stars color"
+        },
+        {
+          "type": "color",
+          "id": "bg_star_color",
+          "default": "#ececec",
+          "label": "Background stars color"
+        },
+        {
+          "type": "range",
+          "id": "rating",
+          "label": "Rating",
+          "min": 1,
+          "max": 5,
+          "step": 0.1,
+          "default": 4.8
+        },
+        {
+          "type": "select",
+          "id": "bg_stars_style",
+          "options": [
+            {
+              "value": "outlined",
+              "label": "Outlined"
+            },
+            {
+              "value": "full",
+              "label": "Full"
+            }
+          ],
+          "label": "Background stars style",
+          "default": "full"
+        },
+        {
+          "type": "header",
+          "content": "Message"
+        },
+        {
+          "type": "select",
+          "id": "justify_content",
+          "label": "Justify content",
+          "default": "center",
+          "options": [
+            {
+              "value": "flex-start",
+              "label": "Left"
+            },
+            {
+              "value": "center",
+              "label": "Center"
+            },
+            {
+              "value": "flex-end",
+              "label": "Right"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "social_proof_title",
+          "label": "Social proof title",
+          "default": "1,300+ happy customers"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

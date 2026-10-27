@@ -1,0 +1,279 @@
+{%- comment -%}
+  Shared markup for the `option-picker` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-option-picker.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  DM Option Picker — storefront mirror.
+
+  Renders an outer flex container with one `[data-option-picker-item]`
+  item per Shopify option value, multiplying the merchant-authored item
+  template via placeholder replacement.
+
+  Same captured-template + placeholder-replace pattern as
+  dm-dropdown.liquid. Placeholders inside the item template:
+    __DM_V_VALUE__         option value ("Red", "L")
+    __DM_V_OPTION_NAME__   option name from the product ("Color")
+    __DM_V_PRODUCT_ID__    product id
+    __DM_V_ACTIVE__        "true" / "false" — set on the variant initially
+                           matching the storefront's selected variant
+    __DM_V_AVAILABLE__     "true" / "false"
+    __DM_V_TITLE__         full variant title ("Red / L")
+    __DM_V_PRICE__         money-formatted price
+    __DM_V_COMPARE_AT__    money-formatted compare-at-price (or empty)
+    __DM_V_IMAGE_SRC__     featured image URL (or empty)
+
+  Click handling is centralized in `dm-option-picker.js`. The card-level
+  `--dm-swatch` slot comes from the `swatches` setting — per-value colours
+  resolved at publish (merchant override, else our name guess) so the
+  storefront paints exactly what the canvas did. Absent setting (a theme
+  published before this shipped) falls back to reading the value itself as a
+  CSS colour name, which is what this always did.
+{%- endcomment -%}
+
+{%- assign p = closest.product | default: product -%}
+
+{%- capture outer_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+
+{%- comment -%}
+  Per-item surface — the transpiler hoisted the item root atom (Card, or a
+  bare ColorSwatch for naked swatch pickers) into `item_attrs` +
+  `item_inline` (pre-rendered flat strings, same pattern as
+  custom_styles_attrs/_inline). The wrapper div below IS that root on the
+  storefront — it carries `data-atom-type="card"` /
+  `data-atom-type="color-swatch"` via item_attrs, so theme CSS styles it
+  exactly like the editor's stamped element. (A swatch root publishes with
+  zero inner blocks — the wrapper renders as the swatch itself.)
+
+  Hover + selected are derived in CSS, not emitted here.
+{%- endcomment -%}
+
+{%- comment -%}
+  Capture the item template once at the top — Shopify allows only one
+  `content_for 'blocks'` per template. Reuse for the no-product fallback
+  AND the per-value duplication loop below.
+{%- endcomment -%}
+
+
+{%- comment -%}
+  Shared option resolution + outer-attr surface — used by every branch
+  below (manual / no-product clone / clone loop) so they can't drift.
+{%- endcomment -%}
+{%- liquid
+  assign option_key = option | default: 'option_1'
+  assign option_idx = 0
+  if option_key == 'option_2'
+    assign option_idx = 1
+  elsif option_key == 'option_3'
+    assign option_idx = 2
+  endif
+  assign option = nil
+  if p != blank
+    assign option = p.options_with_values[option_idx]
+  endif
+-%}
+{%- capture outer_attrs -%}
+    {% if direction != blank %}data-flex-direction="{{ direction }}"{% endif %}
+    {% if direction_sm != blank %}data-flex-direction-sm="{{ direction_sm }}"{% endif %}
+    {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+    {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+    {% if align != blank %}data-flex-align="{{ align }}"{% endif %}
+    {% if align_sm != blank %}data-flex-align-sm="{{ align_sm }}"{% endif %}
+    {% if justify != blank %}data-flex-justify="{{ justify }}"{% endif %}
+    {% if justify_sm != blank %}data-flex-justify-sm="{{ justify_sm }}"{% endif %}
+    {% if wrap != blank %}data-flex-wrap="{{ wrap }}"{% endif %}
+    {% if wrap_sm != blank %}data-flex-wrap-sm="{{ wrap_sm }}"{% endif %}
+    {{ custom_styles_attrs }}
+    {% if outer_inline != blank %}style="{{ outer_inline }}"{% endif %}
+    {{ shopify_attributes }}
+{%- endcapture -%}
+
+{%- comment -%}
+  Unresolvable-token fallback. The clone loop below substitutes every
+  `__DM_V_*` per option value, but the two branches that render
+  `item_template` ONCE have no variant to resolve against:
+    - manual mode — each bound Card substituted its own tokens already
+      (dm-card.liquid), so anything still here had no card to resolve it;
+    - no product context (home page, blog, any non-product template) —
+      nothing resolves.
+  Either way the token is dead, and a dead token must render as empty, not
+  as `__DM_V_PRICE__` on a live storefront. Mirrors dm-atom-text.liquid,
+  which already blanks its `__DM_P_*` tokens whether or not `p` exists.
+  A separate variable — the clone loop re-reads `item_template` per value.
+{%- endcomment -%}
+{%- liquid
+  # Only the two once-rendered branches need it — the clone loop below
+  # re-reads `item_template` and substitutes for real.
+  if mode == 'manual' or p == blank
+    assign item_fallback = item_template
+    assign item_fallback = item_fallback | replace: '__DM_V_VALUE__', ''
+    assign item_fallback = item_fallback | replace: '__DM_V_OPTION_NAME__', ''
+    assign item_fallback = item_fallback | replace: '__DM_V_PRODUCT_ID__', ''
+    assign item_fallback = item_fallback | replace: '__DM_V_ACTIVE__', 'false'
+    assign item_fallback = item_fallback | replace: '__DM_V_AVAILABLE__', 'false'
+    assign item_fallback = item_fallback | replace: '__DM_V_TITLE__', ''
+    assign item_fallback = item_fallback | replace: '__DM_V_PRICE__', ''
+    assign item_fallback = item_fallback | replace: '__DM_V_COMPARE_AT__', ''
+    assign item_fallback = item_fallback | replace: '__DM_V_IMAGE_SRC__', ''
+  endif
+-%}
+
+{%- if mode == 'manual' -%}
+  {%- comment -%}
+    Manual mode — no multiplication, no placeholder replacement. The
+    authored child blocks render as-is; each bound Card self-stamps its
+    selection attrs via dm-card.liquid + the dm-picker-item-attrs snippet.
+    dm-option-picker.js works unchanged (attribute-driven).
+  {%- endcomment -%}
+  <dm-option-picker data-atom-type="option-picker"
+    {% if p != blank %}data-dm-product-id="{{ p.id }}"{% endif %}
+    {% if option != blank %}data-option-name="{{ option.name | escape }}"{% endif %}
+    {{ outer_attrs }}
+  >
+    {{ item_fallback }}
+  </dm-option-picker>
+{%- elsif p == blank -%}
+  {%- comment -%}
+    No product context — render the authored template once inside a single
+    card wrapper so merchants can preview the layout on non-product pages.
+    Click handler no-ops without `data-dm-product-id`.
+  {%- endcomment -%}
+  <dm-option-picker data-atom-type="option-picker"
+    {{ outer_attrs }}
+  >
+    <div
+      data-option-picker-item
+      data-active="false"
+      {{ item_attrs }}
+      {% if item_inline != blank %}style="{{ item_inline }}"{% endif %}
+    >
+      {{ item_fallback }}
+    </div>
+  </dm-option-picker>
+{%- else -%}
+  <dm-option-picker data-atom-type="option-picker"
+    data-dm-product-id="{{ p.id }}"
+    {% if option != blank %}data-option-name="{{ option.name | escape }}"{% endif %}
+    {{ outer_attrs }}
+  >
+    {%- if option == blank -%}
+      {%- comment -%}Selected option doesn't exist on this product.{%- endcomment -%}
+    {%- else -%}
+      {%- assign selected_value = option.selected_value -%}
+      {%- comment -%}
+        Resolved swatch colours, baked at publish as `Value=#hex|Value=#hex`
+        (see `serializeSwatchesForShopify`). Split once here rather than per
+        value. When the setting is absent — a theme published before this
+        shipped — every lookup misses and the fallback below keeps the old
+        behaviour, so an old theme renders exactly as it did.
+      {%- endcomment -%}
+      {%- assign swatch_pairs = swatches | split: '|' -%}
+      {%- for value in option.values -%}
+        {%- liquid
+          # Colour for THIS value: the baked entry, else the value itself read
+          # as a CSS colour name — which is all this ever had, and is why
+          # "Brown" painted CSS brown (#A52A2A) rather than ours.
+          assign swatch_color = value
+          for pair in swatch_pairs
+            assign kv = pair | split: '='
+            if kv[0] == value
+              assign swatch_color = kv[1]
+              break
+            endif
+          endfor
+        -%}
+        {%- liquid
+          assign matching_variant = nil
+          for v in p.variants
+            if option_idx == 0 and v.option1 == value
+              assign matching_variant = v
+              break
+            elsif option_idx == 1 and v.option2 == value
+              assign matching_variant = v
+              break
+            elsif option_idx == 2 and v.option3 == value
+              assign matching_variant = v
+              break
+            endif
+          endfor
+
+          assign is_active = 'false'
+          if selected_value == value
+            assign is_active = 'true'
+          endif
+
+          # Available when ANY variant at this option-value is in stock —
+          # mirrors the editor logic. Multi-option products may have some
+          # combinations sold-out without disabling the whole value.
+          assign is_available = 'false'
+          for v in p.variants
+            if option_idx == 0 and v.option1 == value and v.available
+              assign is_available = 'true'
+              break
+            elsif option_idx == 1 and v.option2 == value and v.available
+              assign is_available = 'true'
+              break
+            elsif option_idx == 2 and v.option3 == value and v.available
+              assign is_available = 'true'
+              break
+            endif
+          endfor
+
+          assign price_str = ''
+          assign compare_str = ''
+          assign image_src = ''
+          assign variant_title = value
+          if matching_variant != nil
+            assign price_str = matching_variant.price | money
+            if matching_variant.compare_at_price > matching_variant.price
+              assign compare_str = matching_variant.compare_at_price | money
+            endif
+            if matching_variant.featured_media != nil
+              assign image_src = matching_variant.featured_media | img_url: '600x'
+            endif
+            assign variant_title = matching_variant.title
+          endif
+
+          assign item_html = item_template
+          assign item_html = item_html | replace: '__DM_V_VALUE__', value
+          assign item_html = item_html | replace: '__DM_V_OPTION_NAME__', option.name
+          assign item_html = item_html | replace: '__DM_V_PRODUCT_ID__', p.id
+          assign item_html = item_html | replace: '__DM_V_ACTIVE__', is_active
+          assign item_html = item_html | replace: '__DM_V_AVAILABLE__', is_available
+          assign item_html = item_html | replace: '__DM_V_TITLE__', variant_title
+          assign item_html = item_html | replace: '__DM_V_PRICE__', price_str
+          assign item_html = item_html | replace: '__DM_V_COMPARE_AT__', compare_str
+          assign item_html = item_html | replace: '__DM_V_IMAGE_SRC__', image_src
+        -%}
+        {%- capture item_style -%}{{ item_inline }}--dm-swatch: {{ swatch_color }};{%- endcapture -%}
+        <div
+          data-option-picker-item
+          data-variant-value="{{ value | escape }}"
+          data-variant-option-name="{{ option.name | escape }}"
+          data-dm-product-id="{{ p.id }}"
+          data-active="{{ is_active }}"
+          data-variant-available="{{ is_available }}"
+          {{ item_attrs }}
+          style="{{ item_style }}"
+        >
+          {{ item_html }}
+        </div>
+      {%- endfor -%}
+    {%- endif -%}
+  </dm-option-picker>
+{%- endif -%}

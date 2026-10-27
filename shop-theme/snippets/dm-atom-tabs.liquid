@@ -1,0 +1,35 @@
+{%- comment -%}
+  Shared markup for the `tabs` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-tabs.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- capture all_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-tabs
+  data-atom-type="tabs"
+  {% if variant != blank %}data-tabs-variant="{{ variant }}"{% endif %}
+  {% if orientation != blank %}data-tabs-orientation="{{ orientation }}"{% endif %}
+  {% if align != blank %}data-tabs-align="{{ align }}"{% endif %}
+  {% if default_value != blank %}data-tabs-default-value="{{ default_value }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</dm-tabs>

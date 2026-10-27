@@ -1,0 +1,56 @@
+{%- comment -%}
+  Shared markup for the `trustpilot` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-trustpilot.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  Trustpilot atom — branded review widget: 5 fixed squares, each with a
+  white star, half-step partial fill. Pure display, no JS. Mirrors
+  `trustpilot/render.tsx`. The green (#00B67A), empty-gray, and star color
+  are brand-locked in dm-theme.css — there are no color settings (a
+  merchant who wants a recolorable widget swaps to StarRating). Rating
+  rounds to the nearest 0.5 on render (ecom convention). Swap pair:
+  StarRating — `rating` + `size` carry over both directions.
+{%- endcomment -%}
+{%- assign rating = rating | default: 0 | times: 2.0 | round | divided_by: 2.0 -%}
+{%- capture all_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-trustpilot
+  data-atom-type="trustpilot"
+  {% if size != blank %}data-trustpilot-size="{{ size }}"{% endif %}
+  {% if size_sm != blank %}data-trustpilot-size-sm="{{ size_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- for i in (0..4) -%}
+    {%- assign fill = rating | minus: i -%}
+    {%- if fill < 0 -%}{%- assign fill = 0 -%}{%- endif -%}
+    {%- if fill > 1 -%}{%- assign fill = 1 -%}{%- endif -%}
+    {%- assign clip_right = 1.0 | minus: fill | times: 100 -%}
+    <span class="dm-tp-cell">
+      <span class="dm-tp-square dm-tp-empty">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27 5.82 21l1.64-7.03L2 9.24l7.19-.61L12 2l2.81 6.63 7.19.61-5.46 4.73L18.18 21z" fill="currentColor"></path></svg>
+      </span>
+      <span class="dm-tp-square dm-tp-filled" style="clip-path: inset(0 {{ clip_right }}% 0 0)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27 5.82 21l1.64-7.03L2 9.24l7.19-.61L12 2l2.81 6.63 7.19.61-5.46 4.73L18.18 21z" fill="currentColor"></path></svg>
+      </span>
+    </span>
+  {%- endfor -%}
+</dm-trustpilot>

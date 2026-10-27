@@ -1,0 +1,112 @@
+{%- comment -%}
+  Shared render body for a DropMagic Section. The section markup (data-attrs,
+  inline styles, masks, customStyles, sticky) lives here in ONE place so the
+  two callers can't drift:
+    - blocks/dm-section.liquid   — body sections (blocks of dm-page)
+    - sections/dm-section.liquid — header / footer group sections
+  Each caller keeps its own {% schema %} (Shopify can't share schema across
+  section + block files).
+
+  Params:
+    s                  - settings object (block.settings or section.settings)
+    children           - pre-captured `{% content_for 'blocks' %}` output
+    shopify_attributes - block.shopify_attributes (blocks only; blank for sections)
+    sticky_wrapper_id  - section.id (header / footer group only). When the
+                         section is sticky, its own `shopify-section` wrapper is
+                         dropped to `display: contents` so the inner sticky
+                         section pins to the page instead of being clipped by
+                         the (content-height) wrapper box. Body sections don't
+                         pass this — they sit inside the tall dm-page section and
+                         pin via the dm-theme.css `[data-section-sticky]` rule.
+{%- endcomment -%}
+
+{%- comment -%}
+  Two padding ladders, matching sectionSchema: left/right use the coarse
+  `paddingScale`, top/bottom the fine `paddingTbScale`. They must stay
+  separate — a step missing from the ladder falls through to a raw `Npx`
+  inline style, which beats the `[data-section-pt='<step>']` rule in
+  dm-theme.css and publishes N pixels where the step means N x 4px.
+{%- endcomment -%}
+{%- assign scales = '0,2,4,8,16,24,32' | split: ',' -%}
+{%- assign tb_scales = '0,px,0_5,1,2,3,4,6,8,12,16,20,24,32,40,48,56,60' | split: ',' -%}
+{%- assign h_scales = 'sm,md,lg,xl' | split: ',' -%}
+{%- capture raw_style -%}
+  {%- unless tb_scales contains s.padding_top -%}{%- if s.padding_top != blank -%}padding-top: {{ s.padding_top }}px; {%- endif -%}{%- endunless -%}
+  {%- unless tb_scales contains s.padding_bottom -%}{%- if s.padding_bottom != blank -%}padding-bottom: {{ s.padding_bottom }}px; {%- endif -%}{%- endunless -%}
+  {%- unless scales contains s.padding_left -%}{%- if s.padding_left != blank -%}padding-left: {{ s.padding_left }}px; {%- endif -%}{%- endunless -%}
+  {%- unless scales contains s.padding_right -%}{%- if s.padding_right != blank -%}padding-right: {{ s.padding_right }}px; {%- endif -%}{%- endunless -%}
+  {%- assign mh_scales = 'auto,sm,md,lg,screen' | split: ',' -%}
+  {%- unless mh_scales contains s.min_height -%}{%- if s.min_height != blank -%}min-height: {{ s.min_height }}px; {%- endif -%}{%- endunless -%}
+  {%- comment -%} background_color routes by value shape (mirrors render.tsx):
+      solid → --dm-background; gradient → bottom layer of the --dm-section-bg
+      background-image slot; a value derived from the background role itself
+      → painted directly, because `--dm-background: var(--dm-background-a50)`
+      is a custom-property cycle (the alpha stops are a color-mix over
+      --dm-background, declared on this same [data-theme-combination]
+      element) and would compute to guaranteed-invalid — transparent section.
+      The substring tests are the Liquid form of render.tsx's
+      `referencesBackgroundRole` regex: they catch `var(--dm-background)`,
+      `var(--dm-background, …)` and the -a10…-a90 stops, but not the distinct
+      --dm-background-gradient token. {%- endcomment -%}
+  {%- assign bg_gradient = '' -%}
+  {%- assign bg_self_ref = false -%}
+  {%- if s.background_color contains '--dm-background)' or s.background_color contains '--dm-background,' or s.background_color contains '--dm-background-a' -%}
+    {%- assign bg_self_ref = true -%}
+  {%- endif -%}
+  {%- if s.background_color contains 'gradient(' -%}
+    {%- assign bg_gradient = s.background_color -%}
+  {%- elsif s.background_color != blank -%}
+    {%- if bg_self_ref -%}background-color: {{ s.background_color }}; {%- else -%}--dm-background: {{ s.background_color }}; {%- endif -%}
+  {%- endif -%}
+  {%- comment -%} The trailing `elsif` mirrors render.tsx: an explicit solid
+      background-color emits the slot at `none`, so the higher-specificity
+      instance rule clears the combination's gradient background-image
+      instead of letting it paint over the merchant's color. {%- endcomment -%}
+  {%- if s.background_image != blank and bg_gradient != blank -%}--dm-section-bg: url({{ s.background_image }}), {{ bg_gradient }}; {%- elsif s.background_image != blank -%}--dm-section-bg: url({{ s.background_image }}); {%- elsif bg_gradient != blank -%}--dm-section-bg: {{ bg_gradient }}; {%- elsif s.background_color != blank -%}--dm-section-bg: none; {%- endif -%}
+  {%- if s.background_image_sm != blank and bg_gradient != blank -%}--dm-section-bg-sm: url({{ s.background_image_sm }}), {{ bg_gradient }}; {%- elsif s.background_image_sm != blank -%}--dm-section-bg-sm: url({{ s.background_image_sm }}); {%- endif -%}
+  {%- if s.background_overlay_color != blank -%}--dm-section-overlay-color: {{ s.background_overlay_color }}; {%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ raw_style }}{{ s.custom_styles_inline }}{%- endcapture -%}
+
+{%- if sticky_wrapper_id != blank and s.sticky != blank and s.sticky != 'relative' -%}
+  <style>#shopify-section-{{ sticky_wrapper_id }} { display: contents; }</style>
+{%- endif -%}
+
+<section
+  data-atom-type="section"
+  {% if s.combination != blank %}data-theme-combination="{{ s.combination }}"{% endif %}
+  {% if s.max_width != blank %}data-section-max-width="{{ s.max_width }}"{% endif %}
+  {% if s.max_width_sm != blank %}data-section-max-width-sm="{{ s.max_width_sm }}"{% endif %}
+  {% if s.padding_top != blank %}data-section-pt="{{ s.padding_top }}"{% endif %}
+  {% if s.padding_top_sm != blank %}data-section-pt-sm="{{ s.padding_top_sm }}"{% endif %}
+  {% if s.padding_bottom != blank %}data-section-pb="{{ s.padding_bottom }}"{% endif %}
+  {% if s.padding_bottom_sm != blank %}data-section-pb-sm="{{ s.padding_bottom_sm }}"{% endif %}
+  {% if s.padding_left != blank %}data-section-pl="{{ s.padding_left }}"{% endif %}
+  {% if s.padding_left_sm != blank %}data-section-pl-sm="{{ s.padding_left_sm }}"{% endif %}
+  {% if s.padding_right != blank %}data-section-pr="{{ s.padding_right }}"{% endif %}
+  {% if s.padding_right_sm != blank %}data-section-pr-sm="{{ s.padding_right_sm }}"{% endif %}
+  {% if s.min_height != blank %}data-section-min-height="{{ s.min_height }}"{% endif %}
+  {% if s.min_height_sm != blank %}data-section-min-height-sm="{{ s.min_height_sm }}"{% endif %}
+  {% if s.background_position != blank %}data-section-bg-position="{{ s.background_position }}"{% endif %}
+  {% if s.background_size != blank %}data-section-bg-size="{{ s.background_size }}"{% endif %}
+  {% if s.background_overlay != blank %}data-section-overlay="{{ s.background_overlay }}"{% endif %}
+  {% if s.background_overlay_sm != blank %}data-section-overlay-sm="{{ s.background_overlay_sm }}"{% endif %}
+  {% if s.sticky != blank and s.sticky != 'relative' %}data-section-sticky="{{ s.sticky }}"{% endif %}
+  {{ s.custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- if s.mask_top != blank and s.mask_top != 'none' -%}
+    <div class="dm-mask dm-mask--top">
+      {%- render 'dm-mask', mask_type: s.mask_top, mask_height: s.mask_top_height, mask_position: 'top', h_scales: h_scales -%}
+    </div>
+  {%- endif -%}
+  <div data-section-inner>
+    {{ children }}
+  </div>
+  {%- if s.mask_bottom != blank and s.mask_bottom != 'none' -%}
+    <div class="dm-mask dm-mask--bottom">
+      {%- render 'dm-mask', mask_type: s.mask_bottom, mask_height: s.mask_bottom_height, mask_position: 'bottom', h_scales: h_scales -%}
+    </div>
+  {%- endif -%}
+</section>

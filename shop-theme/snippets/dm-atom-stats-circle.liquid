@@ -1,0 +1,56 @@
+{%- comment -%}
+  Shared markup for the `stats-circle` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-stats-circle.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- assign pct = percentage | default: 75 | at_most: 100 | at_least: 0 -%}
+{%- capture style -%}
+  --dm-stats-circle-percentage: {{ pct }};
+  {%- if track_color != blank %}--dm-stats-circle-track: {{ track_color }};{% endif -%}
+  {%- if fill_color != blank %}--dm-stats-circle-fill: {{ fill_color }};{% endif -%}
+  {%- if label_color != blank %}--dm-stats-circle-label: {{ label_color }};{% endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ style | strip }}{{ custom_styles_inline }}{%- endcapture -%}
+
+{%- assign text_type = text_type | default: 'percentage' -%}
+{%- if text_type == 'percentage' -%}
+  {%- assign label_text = pct | round | append: '%' -%}
+{%- elsif text_type == 'value' -%}
+  {%- assign label_text = pct | round -%}
+{%- else -%}
+  {%- assign label_text = blank -%}
+{%- endif -%}
+
+<dm-stats-circle
+  data-atom-type="stats-circle"
+  data-stats-percentage="{{ pct }}"
+  {% if size != blank %}data-stats-size="{{ size }}"{% endif %}
+  {% if size_sm != blank %}data-stats-size-sm="{{ size_sm }}"{% endif %}
+  {% if stroke_width != blank %}data-stats-stroke-width="{{ stroke_width }}"{% endif %}
+  {% if text_type != blank %}data-stats-text-type="{{ text_type }}"{% endif %}
+  {% if animated != blank %}data-stats-animated="{{ animated }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  <svg viewBox="0 0 100 100" aria-hidden="true">
+    <circle data-stats-track cx="50" cy="50" pathLength="100"></circle>
+    <circle data-stats-fill cx="50" cy="50" pathLength="100"></circle>
+  </svg>
+  {% if label_text != blank %}<span data-stats-label>{{ label_text }}</span>{% endif %}
+</dm-stats-circle>

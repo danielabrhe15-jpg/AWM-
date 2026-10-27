@@ -1,0 +1,233 @@
+{%- comment -%}
+  Shared markup for the `card` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-card.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  Manual-OptionPicker bound card — when the transpiler published `bind` +
+  `picker_option` (Card inside an OptionPicker with mode "manual"), the
+  card self-stamps the selection attrs via the shared snippet. `swatch` is
+  this card's colour, resolved at publish exactly like clone mode's map
+  (merchant override, else our name guess). Absent — a theme published
+  before this shipped — it falls back to reading `bind` as a CSS colour
+  name, which is all this ever did.
+{%- endcomment -%}
+{%- capture picker_attrs -%}
+  {%- if bind != blank and picker_option != blank -%}
+    {%- assign dm_picker_product = closest.product | default: product -%}
+    {%- render 'dm-picker-item-attrs',
+      p: dm_picker_product,
+      picker_value: bind,
+      picker_option: picker_option -%}
+  {%- endif -%}
+{%- endcapture -%}
+{%- comment -%}
+  Bound-card placeholder replacement — inner dm-text / dm-media blocks
+  publish `variant.*` binds as `__DM_V_*` placeholders (resolved by the
+  clone-mode loop in dm-option-picker.liquid). A manual-mode bound card
+  has no loop, so it resolves its OWN variant context here and replaces
+  them in the captured children — mirror of the clone loop's chain.
+  (`dm_picker_product` persists from the capture above — Liquid assigns
+  inside capture stay in scope.)
+{%- endcomment -%}
+{%- if bind != blank and picker_option != blank and dm_picker_product != blank -%}
+  {%- liquid
+    assign dm_opt_idx = 0
+    if picker_option == 'option_2'
+      assign dm_opt_idx = 1
+    elsif picker_option == 'option_3'
+      assign dm_opt_idx = 2
+    endif
+    assign dm_opt = dm_picker_product.options_with_values[dm_opt_idx]
+
+    assign dm_matching_variant = nil
+    for v in dm_picker_product.variants
+      if dm_opt_idx == 0 and v.option1 == bind
+        assign dm_matching_variant = v
+        break
+      elsif dm_opt_idx == 1 and v.option2 == bind
+        assign dm_matching_variant = v
+        break
+      elsif dm_opt_idx == 2 and v.option3 == bind
+        assign dm_matching_variant = v
+        break
+      endif
+    endfor
+
+    assign dm_price_str = ''
+    assign dm_compare_str = ''
+    assign dm_image_src = ''
+    assign dm_variant_title = bind
+    if dm_matching_variant != nil
+      assign dm_price_str = dm_matching_variant.price | money
+      if dm_matching_variant.compare_at_price > dm_matching_variant.price
+        assign dm_compare_str = dm_matching_variant.compare_at_price | money
+      endif
+      if dm_matching_variant.featured_media != nil
+        assign dm_image_src = dm_matching_variant.featured_media | img_url: '600x'
+      endif
+      assign dm_variant_title = dm_matching_variant.title
+    endif
+
+    assign children = children | replace: '__DM_V_VALUE__', bind
+    if dm_opt != blank
+      assign children = children | replace: '__DM_V_OPTION_NAME__', dm_opt.name
+    endif
+    assign children = children | replace: '__DM_V_PRODUCT_ID__', dm_picker_product.id
+    assign children = children | replace: '__DM_V_TITLE__', dm_variant_title
+    assign children = children | replace: '__DM_V_PRICE__', dm_price_str
+    assign children = children | replace: '__DM_V_COMPARE_AT__', dm_compare_str
+    assign children = children | replace: '__DM_V_IMAGE_SRC__', dm_image_src
+  -%}
+{%- endif -%}
+{%- comment -%}
+  Manual-SellingPlanPicker bound card — `bind` is a plan id (or `one_time`),
+  `picker_kind == "selling_plan"` (published by the transpiler). Self-stamps
+  the selection attrs (`data-selling-plan-id` / `data-one-time`) and replaces
+  the inner `__DM_SP_*` placeholders with this card's plan price for the
+  default variant. The runtime (dm-dropmagic.js syncVariants) re-fills them on
+  variant change; `data-active` is left false here and dm-selling-plan-picker.js
+  activates the first card on initial paint.
+{%- endcomment -%}
+{%- capture sp_attrs -%}{%- endcapture -%}
+{%- if bind != blank and picker_kind == 'selling_plan' -%}
+  {%- liquid
+    assign sp_product = closest.product | default: product
+    assign sp_variant = nil
+    if sp_product != blank
+      assign sp_variant = sp_product.selected_or_first_available_variant
+    endif
+    assign sp_name = ''
+    assign sp_group = ''
+    assign sp_price = ''
+    assign sp_compare = ''
+    assign sp_savings = ''
+    assign sp_savings_pct = ''
+  -%}
+  {%- if bind == 'one_time' -%}
+    {%- liquid
+      assign sp_name = 'One-time purchase'
+      if sp_variant != blank
+        assign sp_price = sp_variant.price | money
+        if sp_variant.compare_at_price > sp_variant.price
+          assign sp_compare = sp_variant.compare_at_price | money
+        endif
+      endif
+    -%}
+    {%- capture sp_attrs -%}data-option-picker-item data-one-time="true" data-active="false"{% if sp_product != blank %} data-dm-product-id="{{ sp_product.id }}"{% endif %}{%- endcapture -%}
+  {%- else -%}
+    {%- liquid
+      # Plan name + group — looked up in the product's selling plan groups.
+      for grp in sp_product.selling_plan_groups
+        for pl in grp.selling_plans
+          assign pid = pl.id | append: ''
+          if pid == bind
+            assign sp_name = pl.name
+            assign sp_group = grp.name
+            break
+          endif
+        endfor
+        if sp_name != ''
+          break
+        endif
+      endfor
+      # Price under this plan for the default variant (runtime re-syncs).
+      assign sp_alloc = nil
+      if sp_variant != blank
+        for a in sp_variant.selling_plan_allocations
+          assign aid = a.selling_plan.id | append: ''
+          if aid == bind
+            assign sp_alloc = a
+            break
+          endif
+        endfor
+      endif
+      assign sp_stale = ''
+      if sp_alloc == nil
+        assign sp_stale = ' data-option-value-stale="true"'
+      else
+        assign sp_price = sp_alloc.price | money
+        assign sp_compare = sp_variant.price | money
+        assign sp_saved = sp_variant.price | minus: sp_alloc.price
+        if sp_saved > 0
+          assign sp_savings = sp_saved | money
+          assign sp_savings_pct = sp_saved | times: 100.0 | divided_by: sp_variant.price | round | append: '%'
+        endif
+      endif
+    -%}
+    {%- capture sp_attrs -%}data-option-picker-item data-selling-plan-id="{{ bind }}" data-active="false"{% if sp_product != blank %} data-dm-product-id="{{ sp_product.id }}"{% endif %}{{ sp_stale }}{%- endcapture -%}
+  {%- endif -%}
+  {%- assign children = children | replace: '__DM_SP_NAME__', sp_name | replace: '__DM_SP_GROUP__', sp_group | replace: '__DM_SP_PRICE__', sp_price | replace: '__DM_SP_COMPARE__', sp_compare | replace: '__DM_SP_SAVINGS_VAL__', sp_savings | replace: '__DM_SP_SAVINGS_PCT__', sp_savings_pct -%}
+{%- endif -%}
+{%- capture card_inline -%}
+  {%- if bg != blank -%}--dm-card-bg: {{ bg }}; {%- endif -%}
+  {%- comment -%} `radius` is a Pattern A enum → `data-card-radius` attr below,
+     NOT an inline `--dm-card-radius` var (the raw token `md` isn't valid CSS).
+     dm-theme.css `[data-card-radius='md']` resolves the token. {%- endcomment -%}
+  {%- if ring_width != blank -%}--dm-card-ring-width: {{ ring_width }}; {%- endif -%}
+  {%- if ring_color != blank -%}--dm-card-ring-color: {{ ring_color }}; {%- endif -%}
+  {%- if picker_attrs != blank and bind != blank -%}--dm-swatch: {{ swatch | default: bind }}; {%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ card_inline }}{{ custom_styles_inline }}{%- endcapture -%}
+<div
+  data-atom-type="card"
+  {{ picker_attrs }}
+  {{ sp_attrs }}
+  {%- comment -%} Bundle bar root — `bar_id` is the placed bar-item molecule's
+     tier id (stamped by addBundleBarToSlot). Mirrors the editor's
+     `bundleManualStamp`; dm-bundle.js reads `data-bar-id`, computes price from
+     the wrapper's `data-bars`, and toggles `data-active`. {%- endcomment -%}
+  {% if bar_id != blank %}data-bundle-bar data-bar-id="{{ bar_id }}" data-active="false"{% endif %}
+  {%- comment -%} Own colour scheme — blank means "inherit the parent Section's",
+     which is the common case, so nothing is emitted and the card reads the
+     ancestor scope exactly as before. A value is a combination's stable numeric
+     INDEX ("0" = lightest, per the kit's `combinationOrder`); the emitted
+     `[data-theme-combination='N']` block re-resolves `--dm-card` +
+     `--dm-card-foreground` here, so the card's surface and its text stay a
+     matched pair independent of the section around it. Mirrors the editor's
+     `dataAttributes` entry in the card schema — the two surfaces disagreed
+     until 2026-09-09, and a card given its own scheme silently fell back to the
+     section's on the storefront. {%- endcomment -%}
+  {% if combination != blank %}data-theme-combination="{{ combination }}"{% endif %}
+  {% if padding != blank %}data-card-padding="{{ padding }}"{% endif %}
+  {% if padding_sm != blank %}data-card-padding-sm="{{ padding_sm }}"{% endif %}
+  {% if radius != blank %}data-card-radius="{{ radius }}"{% endif %}
+  {%- comment -%} `shadow` is a Pattern A stop enum ("theme" emits nothing, so the
+     kit's per-frame dial applies); dm-theme.css `[data-shadow='md']` resolves it
+     into this atom's --dm-*-shadow slot. {%- endcomment -%}
+  {% if shadow != blank and shadow != 'theme' %}data-shadow="{{ shadow }}"{% endif %}
+  {% if direction != blank %}data-flex-direction="{{ direction }}"{% endif %}
+  {% if direction_sm != blank %}data-flex-direction-sm="{{ direction_sm }}"{% endif %}
+  {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+  {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+  {% if align != blank %}data-flex-align="{{ align }}"{% endif %}
+  {% if align_sm != blank %}data-flex-align-sm="{{ align_sm }}"{% endif %}
+  {% if justify != blank %}data-flex-justify="{{ justify }}"{% endif %}
+  {% if justify_sm != blank %}data-flex-justify-sm="{{ justify_sm }}"{% endif %}
+  {% if columns != blank %}data-flex-columns="{{ columns }}"{% endif %}
+  {% if columns_sm != blank %}data-flex-columns-sm="{{ columns_sm }}"{% endif %}
+  {% if wrap != blank %}data-flex-wrap="{{ wrap }}"{% endif %}
+  {% if wrap_sm != blank %}data-flex-wrap-sm="{{ wrap_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</div>

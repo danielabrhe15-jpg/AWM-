@@ -1,0 +1,223 @@
+{%- comment -%}
+  Shared markup for the `bundle-units` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-bundle-units.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  DM Bundle Units — self-contained per-unit variant picker. Renders ONE row per
+  tier unit (count baked at publish from the enclosing bar): an optional product
+  thumbnail + a styled native <select> per product option. Each select carries
+  `data-dm-bundle-unit="barId:index"` + the row's `data-unit-role` so the runtime
+  resolves each unit's variant independently and the cart gets one line per unit.
+
+  A LEAF block — it renders the row pattern itself (looped inline), so there are
+  NO nested picker blocks and it costs ~1 level of Shopify's depth-8 cap. Layout
+  reuses the shared [data-flex-*] rules; the select chrome lives in dm-theme.css.
+
+  Baked settings: `unit_count` / `buy_count` (role split) / `bar_id` from the bar;
+  `show_thumbnail` / `size` / `gap` from the atom props.
+{%- endcomment -%}
+{%- assign p = closest.product | default: product -%}
+{%- assign unit_count = unit_count | default: 0 -%}
+{%- assign buy_count = buy_count | default: 0 -%}
+{%- comment -%} A product with no real options (single default variant — its
+  only option is the "Title" sentinel with one value) leaves nothing to pick
+  per unit: every option is skipped by the row loop's `values.size > 1` guard
+  and the rows would render as bare thumbnails. Hide the whole element
+  (`hidden` + the dm-theme.css rule — the hardcoded data-flex-direction's
+  `display: flex` would beat the UA's [hidden] style). Mirrors the
+  `options.length === 0` early return in bundle-units/render.tsx. {%- endcomment -%}
+{%- assign real_options = 0 -%}
+{%- if p != blank -%}
+  {%- for option in p.options_with_values -%}
+    {%- if option.values.size > 1 -%}
+      {%- assign real_options = real_options | plus: 1 -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- capture all_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-bundle-units
+  data-flex-direction="column"
+  {% if p != blank and real_options == 0 %}hidden{% endif %}
+  {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+  {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+  {% if size != blank %}data-bundle-units-size="{{ size }}"{% endif %}
+  {% if bar_id != blank %}data-bar-id="{{ bar_id }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- if p != blank and unit_count > 0 -%}
+    {%- comment -%} An image-* mode already shows the variant photo inside the
+    row — the row thumbnail would carry the same image twice, so it yields.
+    Mirrors `hasImageMode` in bundle-units/render.tsx. `has_image_dropdown`
+    additionally routes the "#N" chip onto the indicator image when the
+    thumbnail yielded (see the chip comment below). {%- endcomment -%}
+    {%- assign has_image_mode = false -%}
+    {%- assign has_image_dropdown = false -%}
+    {%- for option in p.options_with_values -%}
+      {%- if option.values.size > 1 -%}
+        {%- case forloop.index0 -%}
+          {%- when 0 -%}{%- assign m = display1 | default: 'dropdown' -%}
+          {%- when 1 -%}{%- assign m = display2 | default: 'dropdown' -%}
+          {%- when 2 -%}{%- assign m = display3 | default: 'dropdown' -%}
+          {%- else -%}{%- assign m = 'dropdown' -%}
+        {%- endcase -%}
+        {%- if m == 'image-swatch' or m == 'image-dropdown' -%}
+          {%- assign has_image_mode = true -%}
+        {%- endif -%}
+        {%- if m == 'image-dropdown' -%}
+          {%- assign has_image_dropdown = true -%}
+        {%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- assign thumb_visible = false -%}
+    {%- if show_thumbnail != 'false' and has_image_mode == false and p.featured_image != blank -%}
+      {%- assign thumb_visible = true -%}
+    {%- endif -%}
+    {%- for n in (1..unit_count) -%}
+      {%- assign idx = forloop.index0 -%}
+      {%- assign role = 'quantity-breaks' -%}
+      {%- if buy_count > 0 -%}
+        {%- if idx < buy_count -%}{%- assign role = 'buy' -%}{%- else -%}{%- assign role = 'get' -%}{%- endif -%}
+      {%- endif -%}
+      <div
+        data-bundle-unit
+        data-unit-index="{{ idx }}"
+        data-bar-id="{{ bar_id }}"
+        data-unit-role="{{ role }}"
+        data-flex-direction="row"
+        data-flex-align="center"
+        data-flex-gap="2"
+      >
+        {%- comment -%} "#N" chip rides the row's photo (V1's corner-chip
+        look): the thumbnail when shown, else the first image-dropdown's
+        indicator stack (chip_pending, consumed in that branch below).
+        Standalone label only when the row has no photo to ride. Mirrors
+        the chip logic in bundle-units/render.tsx. {%- endcomment -%}
+        {%- assign chip_pending = false -%}
+        {%- if show_unit_index == 'true' and thumb_visible == false and has_image_dropdown -%}
+          {%- assign chip_pending = true -%}
+        {%- endif -%}
+        {%- if show_unit_index == 'true' and thumb_visible == false and has_image_dropdown == false -%}
+          <span data-bundle-unit-index>#{{ idx | plus: 1 }}</span>
+        {%- endif -%}
+        {%- if thumb_visible -%}
+          {%- capture thumb_img -%}
+          <img
+            data-bundle-unit-thumb
+            src="{{ p.featured_image | image_url: width: 96 }}"
+            alt=""
+            width="44"
+            height="44"
+            loading="lazy"
+          >
+          {%- endcapture -%}
+          {%- if show_unit_index == 'true' -%}
+            <span data-bundle-unit-media>{{ thumb_img }}<span data-bundle-unit-index>#{{ idx | plus: 1 }}</span></span>
+          {%- else -%}
+            {{ thumb_img }}
+          {%- endif -%}
+        {%- endif -%}
+        {%- for option in p.options_with_values -%}
+          {%- comment -%} Only REAL options get a picker — a single-value option
+          ("Ships From × 1") or the Title sentinel is a dead control. The
+          runtime partial-matches variants by option index, so skipping is
+          safe as long as forloop.index0 (the ORIGINAL position) is kept.
+
+          Per-option display mode (display1..3, keyed by original position —
+          V1's VariantDisplayType vocabulary). Every mode carries a NATIVE
+          select with the runtime data attrs: visible for the dropdown modes,
+          a hidden proxy for the button/swatch modes (buttons set its value +
+          fire change), so variant resolution reads all six identically.
+          {%- endcomment -%}
+          {%- if option.values.size > 1 -%}
+            {%- assign oi = forloop.index0 -%}
+            {%- case oi -%}
+              {%- when 0 -%}{%- assign mode = display1 | default: 'dropdown' -%}
+              {%- when 1 -%}{%- assign mode = display2 | default: 'dropdown' -%}
+              {%- when 2 -%}{%- assign mode = display3 | default: 'dropdown' -%}
+              {%- else -%}{%- assign mode = 'dropdown' -%}
+            {%- endcase -%}
+            {%- assign sel_val = option.selected_value | default: option.values.first -%}
+            {%- assign option_key = 'option' | append: forloop.index -%}
+            {%- capture unit_select -%}
+              <select
+                data-dm-bundle-unit="{{ bar_id }}:{{ idx }}"
+                data-option-index="{{ oi }}"
+                data-dm-product-id="{{ p.id }}"
+                data-variant-option-name="{{ option.name | escape }}"
+                aria-label="{{ option.name | escape }}"
+                {% if mode == 'text-button' or mode == 'color-swatch' or mode == 'image-swatch' %}data-unit-proxy{% endif %}
+              >
+                {%- for value in option.values -%}
+                  <option value="{{ value | escape }}"{% if value == sel_val %} selected{% endif %}>{{ value }}</option>
+                {%- endfor -%}
+              </select>
+            {%- endcapture -%}
+            {%- case mode -%}
+              {%- when 'color-dropdown' -%}
+                <span data-unit-opt data-mode="color-dropdown">
+                  {%- for value in option.values -%}
+                    {%- capture sw_color -%}{% render 'dm-color-from-name', name: value %}{%- endcapture -%}
+                    <span data-unit-indicator data-unit-value="{{ value | escape }}"{% if value == sel_val %} data-selected{% endif %} style="background-color: {{ sw_color }}"></span>
+                  {%- endfor -%}
+                  {{ unit_select }}
+                </span>
+              {%- when 'image-dropdown' -%}
+                {%- capture unit_indicators -%}
+                  {%- for value in option.values -%}
+                    {%- assign v_match = p.variants | where: option_key, value | first -%}
+                    <img data-unit-indicator data-unit-value="{{ value | escape }}"{% if value == sel_val %} data-selected{% endif %} src="{{ v_match.featured_image | default: p.featured_image | image_url: width: 96 }}" alt="" loading="lazy">
+                  {%- endfor -%}
+                {%- endcapture -%}
+                <span data-unit-opt data-mode="image-dropdown">
+                  {%- if chip_pending -%}
+                    {%- assign chip_pending = false -%}
+                    <span data-bundle-unit-media>{{ unit_indicators }}<span data-bundle-unit-index>#{{ idx | plus: 1 }}</span></span>
+                  {%- else -%}
+                    {{ unit_indicators }}
+                  {%- endif -%}
+                  {{ unit_select }}
+                </span>
+              {%- when 'text-button' or 'color-swatch' or 'image-swatch' -%}
+                <span data-unit-opt data-mode="{{ mode }}">
+                  {{ unit_select }}
+                  {%- for value in option.values -%}
+                    {%- if mode == 'color-swatch' -%}
+                      {%- capture sw_color -%}{% render 'dm-color-from-name', name: value %}{%- endcapture -%}
+                      <button type="button" data-unit-value="{{ value | escape }}"{% if value == sel_val %} data-selected{% endif %} title="{{ value | escape }}" aria-label="{{ value | escape }}" style="background-color: {{ sw_color }}"></button>
+                    {%- elsif mode == 'image-swatch' -%}
+                      {%- assign v_match = p.variants | where: option_key, value | first -%}
+                      <button type="button" data-unit-value="{{ value | escape }}"{% if value == sel_val %} data-selected{% endif %} title="{{ value | escape }}"><img src="{{ v_match.featured_image | default: p.featured_image | image_url: width: 96 }}" alt="{{ value | escape }}" loading="lazy"></button>
+                    {%- else -%}
+                      <button type="button" data-unit-value="{{ value | escape }}"{% if value == sel_val %} data-selected{% endif %}>{{ value }}</button>
+                    {%- endif -%}
+                  {%- endfor -%}
+                </span>
+              {%- else -%}
+                {{ unit_select }}
+            {%- endcase -%}
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    {%- endfor -%}
+  {%- endif -%}
+</dm-bundle-units>

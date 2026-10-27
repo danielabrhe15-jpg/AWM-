@@ -1,0 +1,313 @@
+{%- comment -%}
+  `carousel` — thin shim. The markup lives in snippets/dm-atom-carousel.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only what a snippet CAN'T do:
+  `content_for` (template-source-only) and the schema block.
+{%- endcomment -%}
+{%- capture children -%}
+  {% content_for 'blocks' %}
+  {{ block.settings.dm_inline_children }}
+{%- endcapture -%}
+{% render 'dm-atom-carousel',
+  slides_per_view: block.settings.slides_per_view,
+  slides_per_view_sm: block.settings.slides_per_view_sm,
+  space_between: block.settings.space_between,
+  space_between_sm: block.settings.space_between_sm,
+  speed: block.settings.speed,
+  loop: block.settings.loop,
+  autoplay: block.settings.autoplay,
+  autoplay_delay: block.settings.autoplay_delay,
+  effect: block.settings.effect,
+  centered: block.settings.centered,
+  direction: block.settings.direction,
+  navigation: block.settings.navigation,
+  pagination: block.settings.pagination,
+  pause_on_hover: block.settings.pause_on_hover,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes,
+  children: children %}
+
+{% schema %}
+{
+  "name": "DM Carousel",
+  "tag": null,
+  "settings": [
+    {
+      "type": "number",
+      "id": "slides_per_view",
+      "label": "Slides Per View",
+      "default": 3
+    },
+    {
+      "type": "number",
+      "id": "slides_per_view_sm",
+      "label": "Slides Per View (Mobile)"
+    },
+    {
+      "type": "select",
+      "id": "space_between",
+      "label": "Space Between",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Sm",
+          "value": "sm"
+        },
+        {
+          "label": "Md",
+          "value": "md"
+        },
+        {
+          "label": "Lg",
+          "value": "lg"
+        }
+      ],
+      "default": "md"
+    },
+    {
+      "type": "select",
+      "id": "space_between_sm",
+      "label": "Space Between (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Sm",
+          "value": "sm"
+        },
+        {
+          "label": "Md",
+          "value": "md"
+        },
+        {
+          "label": "Lg",
+          "value": "lg"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "speed",
+      "label": "Speed",
+      "options": [
+        {
+          "label": "150",
+          "value": "150"
+        },
+        {
+          "label": "300",
+          "value": "300"
+        },
+        {
+          "label": "500",
+          "value": "500"
+        },
+        {
+          "label": "800",
+          "value": "800"
+        }
+      ],
+      "default": "300"
+    },
+    {
+      "type": "select",
+      "id": "loop",
+      "label": "Loop",
+      "options": [
+        {
+          "label": "True",
+          "value": "true"
+        },
+        {
+          "label": "False",
+          "value": "false"
+        }
+      ],
+      "default": "false"
+    },
+    {
+      "type": "select",
+      "id": "autoplay",
+      "label": "Autoplay",
+      "options": [
+        {
+          "label": "True",
+          "value": "true"
+        },
+        {
+          "label": "False",
+          "value": "false"
+        }
+      ],
+      "default": "false"
+    },
+    {
+      "type": "select",
+      "id": "autoplay_delay",
+      "label": "Autoplay Delay",
+      "options": [
+        {
+          "label": "3000",
+          "value": "3000"
+        },
+        {
+          "label": "5000",
+          "value": "5000"
+        },
+        {
+          "label": "7000",
+          "value": "7000"
+        },
+        {
+          "label": "10000",
+          "value": "10000"
+        }
+      ],
+      "default": "3000"
+    },
+    {
+      "type": "select",
+      "id": "effect",
+      "label": "Effect",
+      "options": [
+        {
+          "label": "Slide",
+          "value": "slide"
+        },
+        {
+          "label": "Fade",
+          "value": "fade"
+        }
+      ],
+      "default": "slide"
+    },
+    {
+      "type": "select",
+      "id": "centered",
+      "label": "Centered",
+      "options": [
+        {
+          "label": "True",
+          "value": "true"
+        },
+        {
+          "label": "False",
+          "value": "false"
+        }
+      ],
+      "default": "false"
+    },
+    {
+      "type": "select",
+      "id": "direction",
+      "label": "Direction",
+      "options": [
+        {
+          "label": "Horizontal",
+          "value": "horizontal"
+        },
+        {
+          "label": "Vertical",
+          "value": "vertical"
+        }
+      ],
+      "default": "horizontal"
+    },
+    {
+      "type": "select",
+      "id": "navigation",
+      "label": "Navigation Arrows",
+      "options": [
+        {
+          "label": "True",
+          "value": "true"
+        },
+        {
+          "label": "False",
+          "value": "false"
+        }
+      ],
+      "default": "true"
+    },
+    {
+      "type": "select",
+      "id": "pagination",
+      "label": "Pagination",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Dots",
+          "value": "dots"
+        },
+        {
+          "label": "Fraction",
+          "value": "fraction"
+        },
+        {
+          "label": "Progressbar",
+          "value": "progressbar"
+        }
+      ],
+      "default": "dots"
+    },
+    {
+      "type": "select",
+      "id": "pause_on_hover",
+      "label": "Pause on Hover",
+      "options": [
+        {
+          "label": "True",
+          "value": "true"
+        },
+        {
+          "label": "False",
+          "value": "false"
+        }
+      ],
+      "default": "true"
+    },
+        {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "liquid",
+      "id": "dm_inline_children",
+      "label": "Inlined children (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [
+    {
+      "name": "DM Carousel"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@theme"
+    }
+  ]
+}
+{% endschema %}

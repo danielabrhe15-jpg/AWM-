@@ -1,0 +1,77 @@
+{%- comment -%}
+  Shared markup for the `group` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-group.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  `action` swaps this Group's tag from <div> to a real <form> — a newsletter or
+  contact capture. Shopify's customer form tag emits no CSRF token, only
+  `form_type` + `utf8` hidden inputs, so there is nothing Liquid-only about a
+  customer form and no wrapper atom is needed.
+
+  Hand-rolled rather than wrapped in the Liquid `form` tag on purpose: that tag
+  takes its attributes as NAMED ARGS, and Liquid forbids a conditional inside a
+  tag's arg list — so the whole conditional data-attr list below would have to
+  be duplicated into two branches. The tag name is just a string here, so one
+  list serves both. The only thing the form tag gives up is
+  `form.posted_successfully?`, which we don't need: dm-dropmagic.js stamps
+  `data-form-state` on a successful POST, and on the `?customer_posted=true`
+  reload that a JS-less native submit lands on.
+
+  (Deliberately no Liquid tag delimiters in this comment — an unclosed block tag
+  inside a comment is a parser hazard.)
+
+  Forms can't nest — an `action` Group inside another one is invalid HTML.
+{%- endcomment -%}
+{%- liquid
+  assign tag = 'div'
+  if action != blank and action != 'none'
+    assign tag = 'form'
+  endif
+-%}
+{%- capture all_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<{{ tag }}
+  data-atom-type="group"
+  {% if tag == 'form' %}method="post" action="/contact#contact_form" accept-charset="UTF-8" data-form-action="{{ action }}"{% endif %}
+  {% if direction != blank %}data-flex-direction="{{ direction }}"{% endif %}
+  {% if direction_sm != blank %}data-flex-direction-sm="{{ direction_sm }}"{% endif %}
+  {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+  {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+  {% if align != blank %}data-flex-align="{{ align }}"{% endif %}
+  {% if align_sm != blank %}data-flex-align-sm="{{ align_sm }}"{% endif %}
+  {% if justify != blank %}data-flex-justify="{{ justify }}"{% endif %}
+  {% if justify_sm != blank %}data-flex-justify-sm="{{ justify_sm }}"{% endif %}
+  {% if columns != blank %}data-flex-columns="{{ columns }}"{% endif %}
+  {% if columns_sm != blank %}data-flex-columns-sm="{{ columns_sm }}"{% endif %}
+  {% if wrap != blank %}data-flex-wrap="{{ wrap }}"{% endif %}
+  {% if wrap_sm != blank %}data-flex-wrap-sm="{{ wrap_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- if tag == 'form' -%}
+    <input type="hidden" name="form_type" value="customer">
+    <input type="hidden" name="utf8" value="✓">
+  {%- endif -%}
+  {{ children }}
+  {%- if tag == 'form' -%}
+    <p data-form-success>{{ success_message | escape }}</p>
+  {%- endif -%}
+</{{ tag }}>

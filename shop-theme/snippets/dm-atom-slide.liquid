@@ -1,0 +1,32 @@
+{%- comment -%}
+  Shared markup for the `slide` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-slide.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- capture all_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<div class="swiper-slide dm-slide"
+  {% if style != blank %}data-slide-style="{{ style }}"{% endif %}
+  {% if padding != blank %}data-slide-padding="{{ padding }}"{% endif %}
+  {% if padding_sm != blank %}data-slide-padding-sm="{{ padding_sm }}"{% endif %}
+  {% if radius != blank %}data-slide-radius="{{ radius }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</div>

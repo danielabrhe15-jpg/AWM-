@@ -1,0 +1,292 @@
+{%- comment -%}
+  Shared markup for the `list` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-list.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- assign p = closest.product | default: product -%}
+{%- assign is_product_media = false -%}
+{%- if bind == 'product.media' and p != blank -%}{%- assign is_product_media = true -%}{%- endif -%}
+{%- comment -%}
+  Gallery state (mirror of `mediaFilled` in list/schema.ts + render.tsx):
+  an UNFILLED gallery (legacy placed pages) expands its captured template
+  per `p.media` entry below; a FILLED one ("true" — the placement fill
+  materialized static slides) renders `children` as-is like any carousel.
+  Both keep `data-bind` + `data-dm-product-id` (the variant→carousel sync
+  selector); only the legacy state emits `data-list-sync-siblings` — a
+  filled gallery's thumb strip is derived chrome, nothing to cross-sync.
+{%- endcomment -%}
+{%- assign is_media_template = false -%}
+{%- if is_product_media and media_filled != 'true' -%}{%- assign is_media_template = true -%}{%- endif -%}
+
+{%- comment -%}
+  Initial `data-list-layout` is computed at render time so SSR matches the
+  user's first paint — no JS-driven flash from "group" → "carousel". On
+  resize, dm-list.js swaps the attribute as the viewport crosses 768px.
+
+  The product-media binding does NOT force "carousel". It decides where the
+  slides come from (the `p.media` loop below), not how they're laid out — a
+  bound list in group mode is a CSS grid of every product image (1 column =
+  stacked editorial gallery, 2+ = grid), driven by the same
+  `data-list-columns` / `data-list-gap` as any other group list. Mirrors
+  `activeLayout` in list/render.tsx.
+{%- endcomment -%}
+{%- assign initial_layout = desktop_layout | default: 'group' -%}
+
+{%- comment -%}
+  Wrapper class for each expanded media. `.swiper-slide` is what Swiper binds
+  to; `.dm-media-item` is a bare grid item (NOT `.swiper-slide` — swiper-bundle
+  .css ships an unscoped `.swiper-slide { width/height: 100% }` that would leak
+  into the grid). The ids below stay on this element in BOTH modes, so
+  dm-list.js can promote a `.dm-media-item` to a slide in place when a
+  `mobileLayout: 'carousel'` list crosses 768px, without burying them a level
+  down where the sync listeners can't read them. Mirrors MEDIA_SLIDE_CLASS /
+  MEDIA_ITEM_CLASS in list/product-media-slides.tsx.
+{%- endcomment -%}
+{%- assign media_item_class = 'dm-media-item' -%}
+{%- if initial_layout == 'carousel' -%}{%- assign media_item_class = 'swiper-slide' -%}{%- endif -%}
+
+{%- comment -%}
+  Carousel CSS vars — mirrors `carouselVars` in carousel-layout.tsx.
+  Tokens (e.g. "md", "edge") resolve via `var(--dm-carousel-X-{token})`
+  where the per-token vars are defined in dm-theme.css; raw numeric
+  values pass through as `<n>px`. Empty inputs emit nothing so the
+  fallback chain in dm-theme.css applies.
+{%- endcomment -%}
+{%- assign arrows_gap_tokens = '0,1,2,3,4,5,6,8,10,12,16,20,24' | split: ',' -%}
+{%- assign dot_size_tokens = 'xs,sm,md,lg' | split: ',' -%}
+{%- comment -%}
+  Arrow appearance (fill/icon/radius/size) is no longer a List setting —
+  the arrow is an editable Button atom published as the `arrow` static
+  block. Arrow POSITION is keyed off `data-arrows-position` (closed enum).
+  Dot VISUAL is per-variant via `data-dots-style` (closed enum:
+  minimal/classic/fluid/backdrop). Dot POSITION is keyed off
+  `data-dots-position` (six corner anchors). These carousel vars only
+  carry the merchant-driven sizing knobs (arrows-gap from canvas
+  drag-handle, dots-size from toolbar).
+{%- endcomment -%}
+{%- capture carousel_vars -%}
+  {%- if arrows_gap != blank -%}{%- if arrows_gap_tokens contains arrows_gap -%}--dm-carousel-arrows-gap-desktop: var(--dm-carousel-arrows-gap-{{ arrows_gap }});{%- else -%}--dm-carousel-arrows-gap-desktop: {{ arrows_gap }}px;{%- endif -%}{%- endif -%}
+  {%- if arrows_gap_sm != blank -%}{%- if arrows_gap_tokens contains arrows_gap_sm -%}--dm-carousel-arrows-gap-mobile: var(--dm-carousel-arrows-gap-{{ arrows_gap_sm }});{%- else -%}--dm-carousel-arrows-gap-mobile: {{ arrows_gap_sm }}px;{%- endif -%}{%- endif -%}
+  {%- if dots_size != blank -%}{%- if dot_size_tokens contains dots_size -%}--dm-carousel-dots-size-desktop: var(--dm-carousel-dots-size-{{ dots_size }});{%- else -%}--dm-carousel-dots-size-desktop: {{ dots_size }}px;{%- endif -%}{%- endif -%}
+  {%- if dots_size_sm != blank -%}{%- if dot_size_tokens contains dots_size_sm -%}--dm-carousel-dots-size-mobile: var(--dm-carousel-dots-size-{{ dots_size_sm }});{%- else -%}--dm-carousel-dots-size-mobile: {{ dots_size_sm }}px;{%- endif -%}{%- endif -%}
+  {%- if children_max_width != blank -%}--dm-carousel-slide-max-width-desktop: {{ children_max_width }}px;{%- endif -%}
+  {%- if children_max_width_sm != blank -%}--dm-carousel-slide-max-width-mobile: {{ children_max_width_sm }}px;{%- endif -%}
+  {%- if thumbs_size != blank -%}--dm-thumbs-size-desktop: {{ thumbs_size }}px;{%- endif -%}
+  {%- if thumbs_size_sm != blank -%}--dm-thumbs-size-mobile: {{ thumbs_size_sm }}px;{%- endif -%}
+{%- endcapture -%}
+
+{%- comment -%}
+  Co-location: when arrows and dots both show and land on the SAME corner
+  (`eff_arrows_position == dots_pos`), render all three chrome elements in
+  one `.dm-arrow-group` flex row (the screenshot pattern — arrows flanking
+  dots). Otherwise render arrows in `.dm-arrow-group` with the pagination as
+  a sibling. Breakpoint-aware (see the decision block below); mirrors the
+  `coLocated` decision in `carousel-layout.tsx`, which reads the active
+  canvas breakpoint's effective values.
+{%- endcomment -%}
+{%- comment -%}
+  Arrow position coercion — corner positions don't make sense in vertical
+  carousels (top-/bottom- assumes a horizontal axis). When direction is
+  vertical AND the merchant picked a corner value, fall back to
+  `edges-outside` at the data-attr level so CSS picks the right layout.
+  Per-breakpoint: desktop direction governs desktop attr; mobile direction
+  (or desktop fallback) governs mobile attr.
+{%- endcomment -%}
+{%- assign eff_arrows_position = arrows_position -%}
+{%- if direction == 'vertical' and arrows_position != blank and arrows_position contains '-' -%}
+  {%- assign _first = arrows_position | split: '-' | first -%}
+  {%- if _first == 'top' or _first == 'bottom' -%}
+    {%- assign eff_arrows_position = 'edges-outside' -%}
+  {%- endif -%}
+{%- endif -%}
+{%- assign _mobile_dir = direction_sm -%}
+{%- if _mobile_dir == blank -%}{%- assign _mobile_dir = direction -%}{%- endif -%}
+{%- assign _mobile_arrows = arrows_position_sm -%}
+{%- if _mobile_arrows == blank -%}{%- assign _mobile_arrows = arrows_position -%}{%- endif -%}
+{%- assign eff_arrows_position_sm = arrows_position_sm -%}
+{%- if _mobile_dir == 'vertical' and _mobile_arrows != blank and _mobile_arrows contains '-' -%}
+  {%- assign _first_sm = _mobile_arrows | split: '-' | first -%}
+  {%- if _first_sm == 'top' or _first_sm == 'bottom' -%}
+    {%- assign eff_arrows_position_sm = 'edges-outside' -%}
+  {%- endif -%}
+{%- endif -%}
+
+{%- assign dots_pos = dots_position | default: 'bottom-center' -%}
+{%- comment -%}
+  Co-location decision, breakpoint-aware. The SSR DOM is static (one shape
+  serves both breakpoints), so pick the breakpoint whose chrome actually
+  depends on it. Show semantics mirror the CSS hide rules: blank = visible,
+  only the literal 'false' hides. Desktop showing BOTH pieces decides as
+  before. Otherwise mobile's effective values (`_sm` with desktop fallback)
+  decide — a mobile-only carousel (desktop grid, chrome authored under -sm)
+  still co-locates. One guarded conflict: desktop showing dots ONLY keeps the
+  independent shape — nested in a co-located group the pagination would ride
+  the arrows' corner anchor instead of `data-dots-position` on desktop.
+{%- endcomment -%}
+{%- assign _m_arrows_show = arrows_show_sm -%}
+{%- if _m_arrows_show == blank -%}{%- assign _m_arrows_show = arrows_show -%}{%- endif -%}
+{%- assign _m_dots_show = dots_show_sm -%}
+{%- if _m_dots_show == blank -%}{%- assign _m_dots_show = dots_show -%}{%- endif -%}
+{%- assign _m_arrows_pos = eff_arrows_position_sm -%}
+{%- if _m_arrows_pos == blank -%}{%- assign _m_arrows_pos = eff_arrows_position -%}{%- endif -%}
+{%- assign _m_dots_pos = dots_position_sm | default: dots_pos -%}
+{%- assign co_located = false -%}
+{%- if arrows_show != 'false' and dots_show != 'false' -%}
+  {%- if eff_arrows_position == dots_pos and direction != 'vertical' -%}
+    {%- assign co_located = true -%}
+  {%- endif -%}
+{%- elsif dots_show == 'false' or arrows_show != 'false' -%}
+  {%- comment -%} Desktop shows arrows-only or neither → mobile decides. {%- endcomment -%}
+  {%- if _m_arrows_show != 'false' and _m_dots_show != 'false' and _m_arrows_pos == _m_dots_pos and _mobile_dir != 'vertical' -%}
+    {%- assign co_located = true -%}
+  {%- endif -%}
+{%- endif -%}
+{%- capture all_inline -%}{{ carousel_vars }}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-list
+  data-atom-type="list"
+  {% if desktop_layout != blank %}data-list-desktop="{{ desktop_layout }}"{% endif %}
+  {% if mobile_layout != blank %}data-list-mobile="{{ mobile_layout }}"{% endif %}
+  {% if columns != blank %}data-list-columns="{{ columns }}"{% endif %}
+  {% if columns_sm != blank %}data-list-columns-sm="{{ columns_sm }}"{% endif %}
+  {% if gap != blank %}data-list-gap="{{ gap }}"{% endif %}
+  {% if gap_sm != blank %}data-list-gap-sm="{{ gap_sm }}"{% endif %}
+  {% if width != blank %}data-list-width="{{ width }}"{% endif %}
+  data-list-layout="{{ initial_layout }}"
+  {% if slides_per_view != blank %}data-carousel-slides-per-view="{{ slides_per_view }}"{% endif %}
+  {% if slides_per_view_sm != blank %}data-carousel-slides-per-view-sm="{{ slides_per_view_sm }}"{% endif %}
+  {% if speed != blank %}data-carousel-speed="{{ speed }}"{% endif %}
+  {% if loop != blank %}data-carousel-loop="{{ loop }}"{% endif %}
+  {% if autoplay != blank %}data-carousel-autoplay="{{ autoplay }}"{% endif %}
+  {% if autoplay_delay != blank %}data-carousel-autoplay-delay="{{ autoplay_delay }}"{% endif %}
+  {% if pause_on_hover != blank %}data-carousel-pause-on-hover="{{ pause_on_hover }}"{% endif %}
+  {% if arrows_show != blank %}data-arrows-show="{{ arrows_show }}"{% endif %}
+  {% if arrows_show_sm != blank %}data-arrows-show-sm="{{ arrows_show_sm }}"{% endif %}
+  {% if eff_arrows_position != blank %}data-arrows-position="{{ eff_arrows_position }}"{% endif %}
+  {% if eff_arrows_position_sm != blank %}data-arrows-position-sm="{{ eff_arrows_position_sm }}"{% endif %}
+  {% if dots_show != blank %}data-dots-show="{{ dots_show }}"{% endif %}
+  {% if dots_show_sm != blank %}data-dots-show-sm="{{ dots_show_sm }}"{% endif %}
+  {% if dots_style != blank %}data-dots-style="{{ dots_style }}"{% endif %}
+  {% if dots_position != blank %}data-dots-position="{{ dots_position }}"{% endif %}
+  {% if dots_position_sm != blank %}data-dots-position-sm="{{ dots_position_sm }}"{% endif %}
+  {% if thumbs_show != blank %}data-thumbs-show="{{ thumbs_show }}"{% endif %}
+  {% if thumbs_show_sm != blank %}data-thumbs-show-sm="{{ thumbs_show_sm }}"{% endif %}
+  {% if thumbs_position != blank %}data-thumbs-position="{{ thumbs_position }}"{% endif %}
+  {% if thumbs_position_sm != blank %}data-thumbs-position-sm="{{ thumbs_position_sm }}"{% endif %}
+  {% if bind != blank %}data-bind="{{ bind }}"{% endif %}
+  {%- comment -%}
+    Sibling-sync is implied by the product-media binding — product-scoped
+    media carousels follow each other's slide index (gallery + thumbnail
+    pattern). No separate setting; gated on the same `is_product_media` as
+    the product-id attr. Mirrors the `isProductMediaBound` gate in render.tsx.
+  {%- endcomment -%}
+  {% if is_product_media %}data-dm-product-id="{{ p.id }}"{% endif %}
+  {% if is_media_template %}data-list-sync-siblings="true"{% endif %}
+  {% if carousel_style != blank %}data-carousel-style="{{ carousel_style }}"{% endif %}
+  {% if stacked_variant != blank %}data-carousel-stacked-variant="{{ stacked_variant }}"{% endif %}
+  {% if direction != blank %}data-carousel-direction="{{ direction }}"{% endif %}
+  {% if direction_sm != blank %}data-carousel-direction-sm="{{ direction_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- if is_media_template -%}
+    {%- comment -%}
+      LEGACY product-media expansion — the ONE loop, shared by both layouts
+      (only the wrapper class differs; see `media_item_class` above). The List
+      holds ONE authored Media atom in its `children` slot (captured into
+      `children` above) — we multiply it once per media entry, replacing the
+      `__DM_MEDIA_SRC__` / `__DM_MEDIA_ALT__` placeholders the Media block emits
+      when `bind == 'product.media.image'`. Same capture-template +
+      placeholder-replace pattern as dm-option-picker.liquid. Video media keeps
+      the native `video_tag` branch — the Media-atom template is image-shaped.
+
+      `limit: 10` mirrors GALLERY_FILL_LIMIT (fill-review-images.ts) + the
+      slice in useProductMediaSlides — a 25-image import shouldn't become a
+      25-slide carousel on any surface.
+    {%- endcomment -%}
+    {%- for media in p.media limit: 10 -%}
+      {%- comment -%}
+        Explicit iteration over variants instead of
+        `where: 'featured_media.id', media.id` — the latter is unreliable
+        when some variants have null `featured_media` (the dotted-path
+        lookup silently nukes the whole result set).
+      {%- endcomment -%}
+      {%- assign variant_ids = '' -%}
+      {%- for v in p.variants -%}
+        {%- if v.featured_media != blank and v.featured_media.id == media.id -%}
+          {%- if variant_ids == '' -%}
+            {%- assign variant_ids = v.id | append: '' -%}
+          {%- else -%}
+            {%- assign variant_ids = variant_ids | append: ',' | append: v.id -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+      <div class="{{ media_item_class }}" data-slide-media-id="{{ media.id }}"{% if variant_ids != blank %} data-slide-variant-id="{{ variant_ids }}"{% endif %}>
+        {%- if media.media_type == 'video' or media.media_type == 'external_video' -%}
+          {{ media | video_tag: image_size: '1200x', controls: true, muted: true, playsinline: true }}
+        {%- else -%}
+          {%- assign media_src = media | img_url: '1200x' -%}
+          {%- assign media_alt = media.alt | default: p.title | escape -%}
+          {%- assign slide_html = children | replace: '__DM_MEDIA_SRC__', media_src -%}
+          {%- assign slide_html = slide_html | replace: '__DM_MEDIA_ALT__', media_alt -%}
+          {{ slide_html }}
+        {%- endif -%}
+      </div>
+    {%- endfor -%}
+  {%- else -%}
+    {{ children }}
+  {%- endif -%}
+  {%- comment -%}
+    Carousel chrome. The navigation arrow is an editable Button atom
+    published as the `arrow` STATIC block (kept out of `block_order`, so
+    `content_for 'blocks'` above renders slides only). It's rendered once
+    inside `.swiper-button-next`; dm-list.js clones it into the empty
+    `.swiper-button-prev` and dm-theme.css mirrors that one horizontally
+    via `scaleX(-1)`. Visibility is CSS-driven via `data-arrows-show`
+    (and `-sm`); arrow positioning via `data-arrows-position`, dot
+    positioning via `data-dots-position` (six corner anchors).
+
+    Two DOM shapes mirror the React `renderChrome()`:
+      - co_located = true  →  arrows + pagination share one .dm-arrow-group flex row
+      - co_located = false →  .dm-arrow-group holds arrows only; pagination is a sibling
+  {%- endcomment -%}
+  {%- comment -%}
+    Both arrows are SSR'd by calling `content_for 'block'` twice — the
+    `arrow` static block inlines its content at each call. dm-theme.css
+    flips prev's child horizontally via
+    `.dm-arrow-group .swiper-button-prev > *` so the right-pointing icon
+    visually points left. No DOM contract to keep in sync between Liquid
+    and React — just inline the same content in both buttons.
+  {%- endcomment -%}
+  
+  {%- if co_located -%}
+    <div class="dm-arrow-group" data-chrome-mode="co-located">
+      <div class="swiper-button-prev">{{ arrow_html }}</div>
+      <div class="swiper-pagination"></div>
+      <div class="swiper-button-next">{{ arrow_html }}</div>
+    </div>
+  {%- else -%}
+    <div class="dm-arrow-group">
+      <div class="swiper-button-prev">{{ arrow_html }}</div>
+      <div class="swiper-button-next">{{ arrow_html }}</div>
+    </div>
+    <div class="swiper-pagination"></div>
+  {%- endif -%}
+</dm-list>

@@ -1,0 +1,25 @@
+{%- comment -%}
+  Shared markup for the `comparison-cell` atom (type `ComparisonCell`; renders as
+  the <dm-comparison-table-cell> custom element) — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-comparison-cell.liquid — as a Shopify theme block (shallow)
+    - the inline emitter               — as {% render %} inside a parent's
+                                         dm_inline setting past depth 8
+
+  Params are flat (Liquid has no object literal). Cell content (Icon / Text /
+  Media / Button / …) arrives PRE-RENDERED as the `children` string. A
+  `composition` atom — no universal customStyles / margin / hideOn, only its own
+  align / valign / bg.
+{%- endcomment -%}
+{%- capture cell_inline -%}
+  {%- if bg != blank -%}--dm-comparison-cell-bg: {{ bg }}; {%- endif -%}
+{%- endcapture -%}
+<dm-comparison-table-cell
+  data-atom-type="comparison-table-cell"
+  {% if align != blank %}data-comparison-cell-align="{{ align }}"{% endif %}
+  {% if valign != blank %}data-comparison-cell-valign="{{ valign }}"{% endif %}
+  {% if cell_inline != blank %}style="{{ cell_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</dm-comparison-table-cell>

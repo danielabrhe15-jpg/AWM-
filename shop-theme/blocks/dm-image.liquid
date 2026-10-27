@@ -1,0 +1,249 @@
+{%- comment -%}
+  `image` — thin shim. The markup lives in snippets/dm-atom-image.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only what a snippet CAN'T do:
+  `content_for` (template-source-only) and the schema block.
+{%- endcomment -%}
+{% render 'dm-atom-image',
+  src: block.settings.src,
+  alt: block.settings.alt,
+  width: block.settings.width,
+  width_sm: block.settings.width_sm,
+  aspect_ratio: block.settings.aspect_ratio,
+  aspect_ratio_sm: block.settings.aspect_ratio_sm,
+  object_fit: block.settings.object_fit,
+  object_position: block.settings.object_position,
+  radius: block.settings.radius,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes %}
+
+{% schema %}
+{
+  "name": "DM Image",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "src",
+      "label": "Image URL",
+      "default": "https://placehold.co/800x400/e2e8f0/64748b?text=Image"
+    },
+    {
+      "type": "text",
+      "id": "alt",
+      "label": "Alt Text",
+      "default": "Placeholder image"
+    },
+    {
+      "type": "select",
+      "id": "width",
+      "label": "Width",
+      "options": [
+        {
+          "label": "Full",
+          "value": "full"
+        },
+        {
+          "label": "Auto",
+          "value": "auto"
+        }
+      ],
+      "default": "full"
+    },
+    {
+      "type": "select",
+      "id": "width_sm",
+      "label": "Width (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Full",
+          "value": "full"
+        },
+        {
+          "label": "Auto",
+          "value": "auto"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "aspect_ratio",
+      "label": "Aspect Ratio",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto"
+        },
+        {
+          "label": "1/1",
+          "value": "1/1"
+        },
+        {
+          "label": "4/3",
+          "value": "4/3"
+        },
+        {
+          "label": "3/2",
+          "value": "3/2"
+        },
+        {
+          "label": "16/9",
+          "value": "16/9"
+        },
+        {
+          "label": "2/1",
+          "value": "2/1"
+        },
+        {
+          "label": "3/4",
+          "value": "3/4"
+        }
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "select",
+      "id": "aspect_ratio_sm",
+      "label": "Aspect Ratio (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Auto",
+          "value": "auto"
+        },
+        {
+          "label": "1/1",
+          "value": "1/1"
+        },
+        {
+          "label": "4/3",
+          "value": "4/3"
+        },
+        {
+          "label": "3/2",
+          "value": "3/2"
+        },
+        {
+          "label": "16/9",
+          "value": "16/9"
+        },
+        {
+          "label": "2/1",
+          "value": "2/1"
+        },
+        {
+          "label": "3/4",
+          "value": "3/4"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "object_fit",
+      "label": "Fit",
+      "options": [
+        {
+          "label": "Cover",
+          "value": "cover"
+        },
+        {
+          "label": "Contain",
+          "value": "contain"
+        }
+      ],
+      "default": "cover"
+    },
+    {
+      "type": "select",
+      "id": "object_position",
+      "label": "Position",
+      "options": [
+        {
+          "label": "Center",
+          "value": "center"
+        },
+        {
+          "label": "Top",
+          "value": "top"
+        },
+        {
+          "label": "Bottom",
+          "value": "bottom"
+        },
+        {
+          "label": "Left",
+          "value": "left"
+        },
+        {
+          "label": "Right",
+          "value": "right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "radius",
+      "label": "Radius",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Xs",
+          "value": "xs"
+        },
+        {
+          "label": "Sm",
+          "value": "sm"
+        },
+        {
+          "label": "Md",
+          "value": "md"
+        },
+        {
+          "label": "Lg",
+          "value": "lg"
+        },
+        {
+          "label": "Xl",
+          "value": "xl"
+        },
+        {
+          "label": "Full",
+          "value": "full"
+        }
+      ],
+      "default": "md"
+    },
+        {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [
+    {
+      "name": "DM Image"
+    }
+  ]
+}
+{% endschema %}

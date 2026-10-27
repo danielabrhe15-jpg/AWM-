@@ -1,0 +1,106 @@
+{%- comment -%}
+  Option value name → CSS hex. The Liquid mirror of
+  `src/utils/builder/product/css-color-from-name.ts` — keep the map + the
+  match order in sync, like dm-resolve-link.liquid mirrors link/model.ts.
+
+  The map is GENERATED from that module's COLOR_MAP, sorted longest key first.
+  Do not hand-edit it: add the name there and re-emit, or the two vocabularies
+  drift apart again. They already had — this map held 41 of the module's 114
+  names, so "Turquoise" painted the grey fallback on the storefront while the
+  builder painted it turquoise.
+
+  The three passes mirror `cssColorFromName`:
+    1. the whole value IS a name;
+    2. word-wise exact, longest slice at each position, and the LAST match
+       wins — English colour compounds are head-final, so "Wine Red" is red's
+       cousin wine-red and "Dark Navy Blue" is navy rather than the `blue`
+       sitting inside it;
+    3. word-start prefix over the whole value, longest key first, which is what
+       catches run-together and inflected values ("blackish").
+  Then the grey fallback.
+
+  Pass 3 anchors at the start of a word, like the module's `startsAWord`: a
+  bare `contains` reads "tan" out of "Titanium" and "oat" out of "Coat".
+
+  Known divergence, deliberate: the module's light/dark MODIFIERS mix a base
+  colour toward white or black. Liquid cannot do arithmetic on a hex string
+  without a nibble lookup table, so "Light Blue" lands on plain blue here
+  instead of a softened one. That is a shade off, not a grey blob.
+
+  Usage: {% render 'dm-color-from-name', name: value %}
+{%- endcomment -%}
+{%- assign dm_color_map = 'emerald green:#10b981,multicolour:#9ca3af,olive green:#84cc16,transparent:#e8eaed,army green:#4b5320,multicolor:#9ca3af,royal blue:#1d4ed8,terracotta:#c66b4a,aubergine:#4b2d4f,baby blue:#bfdbfe,chocolate:#7b3f00,navy blue:#1e3a5f,off white:#f8f6f2,rose gold:#e8b4a0,turquoise:#40e0d0,amarillo:#eab308,burgundy:#800020,charcoal:#374151,eggplant:#4b2d4f,espresso:#3c1414,graphite:#41424c,hot pink:#ff69b4,lavender:#c4b5fd,rose red:#e11d48,sapphire:#0f52ba,sky blue:#7dd3fc,wine red:#722f37,apricot:#fbceb1,caramel:#c68e17,emerald:#10b981,fuchsia:#d946ef,magenta:#d946ef,marrone:#92400e,mustard:#d4a017,natural:#e5ddd3,silvery:#c0c0c0,bianco:#ffffff,blanco:#ffffff,bronze:#8c7853,cobalt:#1e40af,coffee:#6f4e37,copper:#b87333,forest:#14532d,giallo:#eab308,grigio:#6b7280,indigo:#4f46e5,maroon:#7f1d1d,marron:#92400e,morado:#a855f7,orange:#f97316,purple:#a855f7,salmon:#fa8072,silver:#c0c0c0,violet:#7c3aed,yellow:#eab308,amber:#f59e0b,azure:#3b82f6,beige:#f5f5dc,black:#000000,blush:#f1c6c1,brick:#9c4a35,brown:#92400e,camel:#c19a6b,clear:#e8eaed,coral:#f87171,cream:#fffdd0,denim:#3b5b8c,green:#22c55e,honey:#e8b04b,ivory:#fffff0,khaki:#c3b091,lilac:#c8a2c8,mauve:#b784a7,mocha:#967259,negro:#000000,olive:#84cc16,peach:#fdba74,pearl:#f2ecde,rosso:#ef4444,slate:#64748b,stone:#a8a29e,taupe:#8b8589,verde:#22c55e,wheat:#f5deb3,white:#ffffff,aqua:#22d3ee,azul:#3b82f6,blue:#3b82f6,cyan:#06b6d4,gold:#fbbf24,gray:#6b7280,grey:#6b7280,gris:#6b7280,jade:#00a86b,lime:#a3e635,mint:#a7f3d0,navy:#1e3a5f,nero:#000000,nude:#e8c9a4,pink:#ec4899,plum:#7e22ce,rojo:#ef4444,rosa:#ec4899,rose:#fb7185,ruby:#9b111e,rust:#b45309,sage:#9caf88,sand:#e0cda9,teal:#14b8a6,wine:#722f37,blu:#3b82f6,oat:#e4d8c4,red:#ef4444,tan:#d2b48c' | split: ',' -%}
+{%- comment -%} Normalise: lowercase, drop a parenthetical ("White (2 Pieces)"
+  → "white"), punctuation to space. `split: ' '` is awk-mode, so it collapses
+  runs of whitespace and trims for us. {%- endcomment -%}
+{%- assign dm_color_name = name | default: '' | downcase -%}
+{%- assign dm_color_name = dm_color_name | split: '(' | first | default: '' -%}
+{%- assign dm_color_name = dm_color_name | replace: '/', ' ' | replace: '-', ' ' | replace: '_', ' ' | replace: ',', ' ' | replace: '.', ' ' | replace: '+', ' ' | replace: '&', ' ' -%}
+{%- assign dm_color_words = dm_color_name | split: ' ' -%}
+{%- assign dm_color_count = dm_color_words | size -%}
+{%- assign dm_color_exact = dm_color_words | join: ' ' -%}
+{%- assign dm_color_out = '' -%}
+
+{%- comment -%} 1. the whole value is a name {%- endcomment -%}
+{%- for dm_pair in dm_color_map -%}
+  {%- assign dm_parts = dm_pair | split: ':' -%}
+  {%- if dm_color_exact == dm_parts[0] -%}
+    {%- assign dm_color_out = dm_parts[1] -%}
+    {%- break -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{%- comment -%} 2. word-wise exact, two words before one, head-final. No break
+  on the outer loop: a later position overwrites an earlier match. {%- endcomment -%}
+{%- if dm_color_out == '' -%}
+  {%- assign dm_color_skip = false -%}
+  {%- for dm_word in dm_color_words -%}
+    {%- if dm_color_skip -%}
+      {%- assign dm_color_skip = false -%}
+      {%- continue -%}
+    {%- endif -%}
+    {%- assign dm_color_hit = '' -%}
+    {%- if forloop.index < dm_color_count -%}
+      {%- assign dm_color_two = dm_word | append: ' ' | append: dm_color_words[forloop.index] -%}
+      {%- for dm_pair in dm_color_map -%}
+        {%- assign dm_parts = dm_pair | split: ':' -%}
+        {%- if dm_color_two == dm_parts[0] -%}
+          {%- assign dm_color_hit = dm_parts[1] -%}
+          {%- assign dm_color_skip = true -%}
+          {%- break -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+    {%- if dm_color_hit == '' -%}
+      {%- for dm_pair in dm_color_map -%}
+        {%- assign dm_parts = dm_pair | split: ':' -%}
+        {%- if dm_word == dm_parts[0] -%}
+          {%- assign dm_color_hit = dm_parts[1] -%}
+          {%- break -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+    {%- if dm_color_hit != '' -%}
+      {%- assign dm_color_out = dm_color_hit -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+
+{%- comment -%} 3. word-start prefix, longest key first. A key starts a word
+  when it opens the value or follows a space — the two halves of the module's
+  `startsAWord`. Anchoring is the point: a bare `contains` reads "tan" out of
+  "Titanium" and "sage" out of "Neck Massager". {%- endcomment -%}
+{%- if dm_color_out == '' -%}
+  {%- for dm_pair in dm_color_map -%}
+    {%- assign dm_parts = dm_pair | split: ':' -%}
+    {%- assign dm_key_size = dm_parts[0] | size -%}
+    {%- assign dm_color_head = dm_color_exact | slice: 0, dm_key_size -%}
+    {%- assign dm_color_inner = ' ' | append: dm_parts[0] -%}
+    {%- if dm_color_head == dm_parts[0] or dm_color_exact contains dm_color_inner -%}
+      {%- assign dm_color_out = dm_parts[1] -%}
+      {%- break -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+
+{%- if dm_color_out == '' -%}{%- assign dm_color_out = '#d1d5db' -%}{%- endif -%}{{ dm_color_out }}

@@ -1,0 +1,12 @@
+{%- comment -%} AWM-Logo als Fallback, solange im Theme-Editor kein Logo hochgeladen ist. {%- endcomment -%}
+<span class="awm-logo">
+  <img src="{{ 'awm-logo-mark.svg' | asset_url }}" alt="" class="awm-logo__mark" width="44" height="44">
+  <span class="awm-logo__text"><strong>AWM</strong><small>Elektrotechniek</small></span>
+</span>
+<style>
+  .awm-logo { display: inline-flex; align-items: center; gap: .6rem; color: rgb(var(--color-foreground)); }
+  .awm-logo__mark { width: 44px; height: 44px; }
+  .awm-logo__text { display: flex; flex-direction: column; line-height: 1.05; }
+  .awm-logo__text strong { font-size: 2.2rem; letter-spacing: .08em; }
+  .awm-logo__text small { font-size: 1.2rem; letter-spacing: .04em; opacity: .75; }
+</style>

@@ -1,0 +1,696 @@
+{%- comment -%}
+  `list` — thin shim. The markup lives in snippets/dm-atom-list.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only what a snippet CAN'T do:
+  `content_for` (template-source-only) and the schema block.
+{%- endcomment -%}
+{%- capture children -%}
+  {% content_for 'blocks' %}
+  {{ block.settings.dm_inline_children }}
+{%- endcapture -%}
+{%- capture arrow_html -%}
+  {% content_for 'block', type: 'dm-button', id: 'arrow' %}
+  {{ block.settings.dm_inline_arrow_html }}
+{%- endcapture -%}
+{% render 'dm-atom-list',
+  desktop_layout: block.settings.desktop_layout,
+  mobile_layout: block.settings.mobile_layout,
+  columns: block.settings.columns,
+  columns_sm: block.settings.columns_sm,
+  gap: block.settings.gap,
+  gap_sm: block.settings.gap_sm,
+  slides_per_view: block.settings.slides_per_view,
+  slides_per_view_sm: block.settings.slides_per_view_sm,
+  width: block.settings.width,
+  speed: block.settings.speed,
+  loop: block.settings.loop,
+  autoplay: block.settings.autoplay,
+  autoplay_delay: block.settings.autoplay_delay,
+  pause_on_hover: block.settings.pause_on_hover,
+  bind: block.settings.bind,
+  media_filled: block.settings.media_filled,
+  arrows_show: block.settings.arrows_show,
+  arrows_position: block.settings.arrows_position,
+  dots_show: block.settings.dots_show,
+  dots_style: block.settings.dots_style,
+  dots_position: block.settings.dots_position,
+  dots_position_sm: block.settings.dots_position_sm,
+  margin_top: block.settings.margin_top,
+  margin_top_sm: block.settings.margin_top_sm,
+  arrows_gap: block.settings.arrows_gap,
+  arrows_gap_sm: block.settings.arrows_gap_sm,
+  arrows_show_sm: block.settings.arrows_show_sm,
+  arrows_position_sm: block.settings.arrows_position_sm,
+  dots_size: block.settings.dots_size,
+  children_max_width: block.settings.children_max_width,
+  children_max_width_sm: block.settings.children_max_width_sm,
+  dots_size_sm: block.settings.dots_size_sm,
+  dots_show_sm: block.settings.dots_show_sm,
+  thumbs_show: block.settings.thumbs_show,
+  thumbs_show_sm: block.settings.thumbs_show_sm,
+  thumbs_position: block.settings.thumbs_position,
+  thumbs_position_sm: block.settings.thumbs_position_sm,
+  thumbs_size: block.settings.thumbs_size,
+  thumbs_size_sm: block.settings.thumbs_size_sm,
+  direction: block.settings.direction,
+  direction_sm: block.settings.direction_sm,
+  carousel_style: block.settings.carousel_style,
+  stacked_variant: block.settings.stacked_variant,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes,
+  children: children,
+  arrow_html: arrow_html %}
+
+{% schema %}
+{
+  "name": "DM List",
+  "tag": null,
+  "settings": [
+    {
+      "type": "select",
+      "id": "desktop_layout",
+      "label": "Layout",
+      "options": [
+        {
+          "label": "Group",
+          "value": "group"
+        },
+        {
+          "label": "Carousel",
+          "value": "carousel"
+        }
+      ],
+      "default": "group"
+    },
+    {
+      "type": "select",
+      "id": "mobile_layout",
+      "label": "Layout (Mobile)",
+      "options": [
+        {
+          "label": "Group",
+          "value": "group"
+        },
+        {
+          "label": "Carousel",
+          "value": "carousel"
+        }
+      ],
+      "default": "carousel"
+    },
+    {
+      "type": "number",
+      "id": "columns",
+      "label": "Columns",
+      "default": 3
+    },
+    {
+      "type": "number",
+      "id": "columns_sm",
+      "label": "Columns (Mobile)"
+    },
+    {
+      "type": "select",
+      "id": "gap",
+      "label": "Gap",
+      "options": [
+        {
+          "label": "0",
+          "value": "0"
+        },
+        {
+          "label": "1",
+          "value": "1"
+        },
+        {
+          "label": "2",
+          "value": "2"
+        },
+        {
+          "label": "3",
+          "value": "3"
+        },
+        {
+          "label": "4",
+          "value": "4"
+        },
+        {
+          "label": "5",
+          "value": "5"
+        },
+        {
+          "label": "6",
+          "value": "6"
+        },
+        {
+          "label": "8",
+          "value": "8"
+        },
+        {
+          "label": "10",
+          "value": "10"
+        },
+        {
+          "label": "12",
+          "value": "12"
+        },
+        {
+          "label": "16",
+          "value": "16"
+        },
+        {
+          "label": "20",
+          "value": "20"
+        },
+        {
+          "label": "24",
+          "value": "24"
+        }
+      ],
+      "default": "4"
+    },
+    {
+      "type": "select",
+      "id": "gap_sm",
+      "label": "Gap (mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "0",
+          "value": "0"
+        },
+        {
+          "label": "1",
+          "value": "1"
+        },
+        {
+          "label": "2",
+          "value": "2"
+        },
+        {
+          "label": "3",
+          "value": "3"
+        },
+        {
+          "label": "4",
+          "value": "4"
+        },
+        {
+          "label": "5",
+          "value": "5"
+        },
+        {
+          "label": "6",
+          "value": "6"
+        },
+        {
+          "label": "8",
+          "value": "8"
+        },
+        {
+          "label": "10",
+          "value": "10"
+        },
+        {
+          "label": "12",
+          "value": "12"
+        },
+        {
+          "label": "16",
+          "value": "16"
+        },
+        {
+          "label": "20",
+          "value": "20"
+        },
+        {
+          "label": "24",
+          "value": "24"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "number",
+      "id": "slides_per_view",
+      "label": "Slides Per View",
+      "default": 3
+    },
+    {
+      "type": "number",
+      "id": "slides_per_view_sm",
+      "label": "Slides Per View (Mobile)"
+    },
+    {
+      "type": "select",
+      "id": "width",
+      "label": "Width",
+      "info": "Full bleeds the carousel viewport to the window edge (first slide stays aligned to the section gutter; controls stay within the section max-width).",
+      "options": [
+        { "value": "contained", "label": "Contained" },
+        { "value": "full",      "label": "Full" }
+      ],
+      "default": "contained"
+    },
+    {
+      "type": "select",
+      "id": "speed",
+      "label": "Speed",
+      "options": [
+        {
+          "label": "150",
+          "value": "150"
+        },
+        {
+          "label": "300",
+          "value": "300"
+        },
+        {
+          "label": "500",
+          "value": "500"
+        },
+        {
+          "label": "800",
+          "value": "800"
+        }
+      ],
+      "default": "300"
+    },
+    {
+      "type": "select",
+      "id": "loop",
+      "label": "Playback",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Loop",
+          "value": "loop"
+        },
+        {
+          "label": "Rewind",
+          "value": "rewind"
+        }
+      ],
+      "default": "loop"
+    },
+    {
+      "type": "select",
+      "id": "autoplay",
+      "label": "Autoplay",
+      "options": [
+        {
+          "label": "True",
+          "value": "true"
+        },
+        {
+          "label": "False",
+          "value": "false"
+        }
+      ],
+      "default": "false"
+    },
+    {
+      "type": "number",
+      "id": "autoplay_delay",
+      "label": "Autoplay Delay",
+      "default": 3000
+    },
+    {
+      "type": "select",
+      "id": "pause_on_hover",
+      "label": "Pause on Hover",
+      "options": [
+        {
+          "label": "True",
+          "value": "true"
+        },
+        {
+          "label": "False",
+          "value": "false"
+        }
+      ],
+      "default": "true"
+    },
+    {
+      "type": "select",
+      "id": "bind",
+      "label": "Dynamic binding",
+      "info": "Bind to product context. \"Product media\" auto-populates slides from the product's images and follows variant selection.",
+      "options": [
+        {
+          "value": "",
+          "label": "None"
+        },
+        {
+          "value": "product.media",
+          "label": "Product media"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "media_filled",
+      "label": "Gallery filled (auto)",
+      "info": "Set by the DropMagic gallery fill: \"true\" = static slides (children render as-is); empty = legacy live product-media expansion.",
+      "options": [
+        { "value": "", "label": "Template (legacy)" },
+        { "value": "true", "label": "Filled (static slides)" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "arrows_show",
+      "label": "Show arrows",
+      "options": [
+        {
+          "value": "true",
+          "label": "True"
+        },
+        {
+          "value": "false",
+          "label": "False"
+        }
+      ],
+      "default": "true"
+    },
+    {
+      "type": "select",
+      "id": "arrows_position",
+      "label": "Arrows position",
+      "options": [
+        { "value": "edges-outside", "label": "Edges — Outside" },
+        { "value": "edges-edge",    "label": "Edges — Edge" },
+        { "value": "edges-inside",  "label": "Edges — Inside" },
+        { "value": "top-left",      "label": "Top Left" },
+        { "value": "top-center",    "label": "Top Center" },
+        { "value": "top-right",     "label": "Top Right" },
+        { "value": "bottom-left",   "label": "Bottom Left" },
+        { "value": "bottom-center", "label": "Bottom Center" },
+        { "value": "bottom-right",  "label": "Bottom Right" }
+      ],
+      "default": "edges-outside"
+    },
+    {
+      "type": "select",
+      "id": "dots_show",
+      "label": "Show dots",
+      "options": [
+        {
+          "value": "true",
+          "label": "True"
+        },
+        {
+          "value": "false",
+          "label": "False"
+        }
+      ],
+      "default": "true"
+    },
+    {
+      "type": "select",
+      "id": "dots_style",
+      "label": "Dots style",
+      "options": [
+        { "value": "minimal",  "label": "Minimal (default)" },
+        { "value": "classic",  "label": "Classic" },
+        { "value": "fluid",    "label": "Fluid (active pill)" },
+        { "value": "backdrop", "label": "Backdrop (frosted)" }
+      ],
+      "default": "minimal"
+    },
+    {
+      "type": "select",
+      "id": "dots_position",
+      "label": "Dots position",
+      "options": [
+        { "value": "top-left",      "label": "Top Left" },
+        { "value": "top-center",    "label": "Top Center" },
+        { "value": "top-right",     "label": "Top Right" },
+        { "value": "bottom-left",   "label": "Bottom Left" },
+        { "value": "bottom-center", "label": "Bottom Center" },
+        { "value": "bottom-right",  "label": "Bottom Right" }
+      ],
+      "default": "bottom-center"
+    },
+    {
+      "type": "select",
+      "id": "dots_position_sm",
+      "label": "Dots position (mobile)",
+      "options": [
+        { "value": "",              "label": "—" },
+        { "value": "top-left",      "label": "Top Left" },
+        { "value": "top-center",    "label": "Top Center" },
+        { "value": "top-right",     "label": "Top Right" },
+        { "value": "bottom-left",   "label": "Bottom Left" },
+        { "value": "bottom-center", "label": "Bottom Center" },
+        { "value": "bottom-right",  "label": "Bottom Right" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "text",
+      "id": "margin_top",
+      "label": "Margin Top"
+    },
+    {
+      "type": "text",
+      "id": "margin_top_sm",
+      "label": "Margin Top (Mobile)"
+    },
+    {
+      "type": "text",
+      "id": "arrows_gap",
+      "label": "Arrows gap",
+      "default": "2"
+    },
+    {
+      "type": "text",
+      "id": "arrows_gap_sm",
+      "label": "Arrows gap (mobile)"
+    },
+    {
+      "type": "select",
+      "id": "arrows_show_sm",
+      "label": "Show arrows (mobile)",
+      "options": [
+        { "value": "",      "label": "—" },
+        { "value": "true",  "label": "True" },
+        { "value": "false", "label": "False" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "arrows_position_sm",
+      "label": "Arrows position (mobile)",
+      "options": [
+        { "value": "",              "label": "—" },
+        { "value": "edges-outside", "label": "Edges — Outside" },
+        { "value": "edges-edge",    "label": "Edges — Edge" },
+        { "value": "edges-inside",  "label": "Edges — Inside" },
+        { "value": "top-left",      "label": "Top Left" },
+        { "value": "top-center",    "label": "Top Center" },
+        { "value": "top-right",     "label": "Top Right" },
+        { "value": "bottom-left",   "label": "Bottom Left" },
+        { "value": "bottom-center", "label": "Bottom Center" },
+        { "value": "bottom-right",  "label": "Bottom Right" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "text",
+      "id": "dots_size",
+      "label": "Dots size",
+      "default": "md"
+    },
+    {
+      "type": "number",
+      "id": "children_max_width",
+      "label": "Children max width (px)"
+    },
+    {
+      "type": "number",
+      "id": "children_max_width_sm",
+      "label": "Children max width (mobile, px)"
+    },
+    {
+      "type": "text",
+      "id": "dots_size_sm",
+      "label": "Dots size (mobile)"
+    },
+    {
+      "type": "select",
+      "id": "dots_show_sm",
+      "label": "Show dots (mobile)",
+      "options": [
+        { "value": "",      "label": "—" },
+        { "value": "true",  "label": "True" },
+        { "value": "false", "label": "False" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "thumbs_show",
+      "label": "Show thumbnails",
+      "info": "Derived thumbnail strip (chrome — slides are cloned from the carousel's own children at load).",
+      "options": [
+        { "value": "false", "label": "False" },
+        { "value": "true",  "label": "True" }
+      ],
+      "default": "false"
+    },
+    {
+      "type": "select",
+      "id": "thumbs_show_sm",
+      "label": "Show thumbnails (mobile)",
+      "options": [
+        { "value": "",      "label": "—" },
+        { "value": "true",  "label": "True" },
+        { "value": "false", "label": "False" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "thumbs_position",
+      "label": "Thumbnails position",
+      "options": [
+        { "value": "under", "label": "Under" },
+        { "value": "left",  "label": "Left" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "under"
+    },
+    {
+      "type": "select",
+      "id": "thumbs_position_sm",
+      "label": "Thumbnails position (mobile)",
+      "options": [
+        { "value": "",      "label": "—" },
+        { "value": "under", "label": "Under" },
+        { "value": "left",  "label": "Left" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "number",
+      "id": "thumbs_size",
+      "label": "Thumbnails size (px)"
+    },
+    {
+      "type": "number",
+      "id": "thumbs_size_sm",
+      "label": "Thumbnails size (mobile, px)"
+    },
+    {
+      "type": "select",
+      "id": "direction",
+      "label": "Direction",
+      "info": "Vertical requires the parent to constrain height. Stacked/Coverflow styles are coerced to Slide.",
+      "options": [
+        { "value": "horizontal", "label": "Horizontal (default)" },
+        { "value": "vertical",   "label": "Vertical" }
+      ],
+      "default": "horizontal"
+    },
+    {
+      "type": "select",
+      "id": "direction_sm",
+      "label": "Direction (mobile)",
+      "options": [
+        { "value": "",           "label": "—" },
+        { "value": "horizontal", "label": "Horizontal" },
+        { "value": "vertical",   "label": "Vertical" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "carousel_style",
+      "label": "Style",
+      "info": "Slide-transition style. Stacked + Coverflow force slidesPerView=auto + centered.",
+      "options": [
+        {
+          "value": "slide",
+          "label": "Slide (default)"
+        },
+        {
+          "value": "stacked",
+          "label": "Stacked"
+        },
+        {
+          "value": "coverflow",
+          "label": "Coverflow"
+        }
+      ],
+      "default": "slide"
+    },
+    {
+      "type": "select",
+      "id": "stacked_variant",
+      "label": "Stacked variant",
+      "info": "Preset bundle for the Stacked style — picks scale/offset/depth/opacity falloff.",
+      "options": [
+        {
+          "value": "subtle",
+          "label": "Subtle"
+        },
+        {
+          "value": "default",
+          "label": "Default"
+        },
+        {
+          "value": "dramatic",
+          "label": "Dramatic"
+        }
+      ],
+      "default": "default"
+    },
+        {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "liquid",
+      "id": "dm_inline_children",
+      "label": "Inlined children (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "liquid",
+      "id": "dm_inline_arrow_html",
+      "label": "Inlined arrow_html (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [
+    {
+      "name": "DM List"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@theme"
+    }
+  ]
+}
+{% endschema %}

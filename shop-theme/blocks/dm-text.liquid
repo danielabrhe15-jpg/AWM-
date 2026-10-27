@@ -1,0 +1,477 @@
+{%- comment -%}
+  `text` — thin shim. The markup lives in snippets/dm-atom-text.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only what a snippet CAN'T do:
+  `content_for` (template-source-only) and the schema block.
+{%- endcomment -%}
+{% render 'dm-atom-text',
+  content: block.settings.content,
+  type: block.settings.type,
+  tag: block.settings.tag,
+  color: block.settings.color,
+  size: block.settings.size,
+  size_sm: block.settings.size_sm,
+  align: block.settings.align,
+  align_sm: block.settings.align_sm,
+  weight: block.settings.weight,
+  weight_sm: block.settings.weight_sm,
+  decoration: block.settings.decoration,
+  spans: block.settings.spans,
+  margin_top: block.settings.margin_top,
+  margin_top_sm: block.settings.margin_top_sm,
+  bind: block.settings.bind,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes %}
+
+{% schema %}
+{
+  "name": "DM Text",
+  "tag": null,
+  "settings": [
+    {
+      "type": "textarea",
+      "id": "content",
+      "label": "Content",
+      "default": "Hello World"
+    },
+    {
+      "type": "select",
+      "id": "type",
+      "label": "Type",
+      "options": [
+        {
+          "label": "Title",
+          "value": "title"
+        },
+        {
+          "label": "Content",
+          "value": "content"
+        }
+      ],
+      "default": "content"
+    },
+    {
+      "type": "select",
+      "id": "tag",
+      "label": "Tag",
+      "options": [
+        {
+          "label": "H1",
+          "value": "h1"
+        },
+        {
+          "label": "H2",
+          "value": "h2"
+        },
+        {
+          "label": "H3",
+          "value": "h3"
+        },
+        {
+          "label": "P",
+          "value": "p"
+        },
+        {
+          "label": "Span",
+          "value": "span"
+        }
+      ],
+      "default": "p"
+    },
+    {
+      "type": "text",
+      "id": "color",
+      "label": "Color",
+      "info": "Any CSS color — e.g. var(--dm-foreground), var(--dm-primary), #FF0000. Empty = inherit cascade."
+    },
+    {
+      "type": "select",
+      "id": "size",
+      "label": "Size",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto"
+        },
+        {
+          "label": "Title xs",
+          "value": "title-xs"
+        },
+        {
+          "label": "Title sm",
+          "value": "title-sm"
+        },
+        {
+          "label": "Title md",
+          "value": "title-md"
+        },
+        {
+          "label": "Title lg",
+          "value": "title-lg"
+        },
+        {
+          "label": "Title xl",
+          "value": "title-xl"
+        },
+        {
+          "label": "Title 2xl",
+          "value": "title-2xl"
+        },
+        {
+          "label": "Title 3xl",
+          "value": "title-3xl"
+        },
+        {
+          "label": "Title 4xl",
+          "value": "title-4xl"
+        },
+        {
+          "label": "Content xs",
+          "value": "content-xs"
+        },
+        {
+          "label": "Content sm",
+          "value": "content-sm"
+        },
+        {
+          "label": "Content md",
+          "value": "content-md"
+        },
+        {
+          "label": "Content lg",
+          "value": "content-lg"
+        },
+        {
+          "label": "Content xl",
+          "value": "content-xl"
+        },
+        {
+          "label": "Content 2xl",
+          "value": "content-2xl"
+        }
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "select",
+      "id": "size_sm",
+      "label": "Size (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Auto",
+          "value": "auto"
+        },
+        {
+          "label": "Title xs",
+          "value": "title-xs"
+        },
+        {
+          "label": "Title sm",
+          "value": "title-sm"
+        },
+        {
+          "label": "Title md",
+          "value": "title-md"
+        },
+        {
+          "label": "Title lg",
+          "value": "title-lg"
+        },
+        {
+          "label": "Title xl",
+          "value": "title-xl"
+        },
+        {
+          "label": "Title 2xl",
+          "value": "title-2xl"
+        },
+        {
+          "label": "Title 3xl",
+          "value": "title-3xl"
+        },
+        {
+          "label": "Title 4xl",
+          "value": "title-4xl"
+        },
+        {
+          "label": "Content xs",
+          "value": "content-xs"
+        },
+        {
+          "label": "Content sm",
+          "value": "content-sm"
+        },
+        {
+          "label": "Content md",
+          "value": "content-md"
+        },
+        {
+          "label": "Content lg",
+          "value": "content-lg"
+        },
+        {
+          "label": "Content xl",
+          "value": "content-xl"
+        },
+        {
+          "label": "Content 2xl",
+          "value": "content-2xl"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "text_alignment",
+      "id": "align",
+      "label": "Align",
+      "default": "left"
+    },
+    {
+      "type": "select",
+      "id": "align_sm",
+      "label": "Align (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Left",
+          "value": "left"
+        },
+        {
+          "label": "Center",
+          "value": "center"
+        },
+        {
+          "label": "Right",
+          "value": "right"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "weight",
+      "label": "Weight",
+      "options": [
+        {
+          "label": "Inherit",
+          "value": "inherit"
+        },
+        {
+          "label": "Light",
+          "value": "light"
+        },
+        {
+          "label": "Normal",
+          "value": "normal"
+        },
+        {
+          "label": "Medium",
+          "value": "medium"
+        },
+        {
+          "label": "Semibold",
+          "value": "semibold"
+        },
+        {
+          "label": "Bold",
+          "value": "bold"
+        }
+      ],
+      "default": "inherit"
+    },
+    {
+      "type": "select",
+      "id": "weight_sm",
+      "label": "Weight (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Inherit",
+          "value": "inherit"
+        },
+        {
+          "label": "Light",
+          "value": "light"
+        },
+        {
+          "label": "Normal",
+          "value": "normal"
+        },
+        {
+          "label": "Medium",
+          "value": "medium"
+        },
+        {
+          "label": "Semibold",
+          "value": "semibold"
+        },
+        {
+          "label": "Bold",
+          "value": "bold"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "decoration",
+      "label": "Decoration",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Underline",
+          "value": "underline"
+        },
+        {
+          "label": "Line through",
+          "value": "line-through"
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "textarea",
+      "id": "spans",
+      "label": "Highlights",
+      "default": "[]"
+    },
+    {
+      "type": "text",
+      "id": "margin_top",
+      "label": "Margin Top"
+    },
+    {
+      "type": "text",
+      "id": "margin_top_sm",
+      "label": "Margin Top (Mobile)"
+    },
+    {
+      "type": "select",
+      "id": "bind",
+      "label": "Dynamic binding",
+      "options": [
+        {
+          "value": "",
+          "label": "None (static content)"
+        },
+        {
+          "value": "product.title",
+          "label": "Product title"
+        },
+        {
+          "value": "product.price",
+          "label": "Product price"
+        },
+        {
+          "value": "product.compare_at_price",
+          "label": "Product compare-at price"
+        },
+        {
+          "value": "product.vendor",
+          "label": "Product vendor"
+        },
+        {
+          "value": "product.handle",
+          "label": "Product handle"
+        },
+        {
+          "value": "product.type",
+          "label": "Product type"
+        },
+        {
+          "value": "product.description",
+          "label": "Product description"
+        },
+        {
+          "value": "product.option_1.name",
+          "label": "Product — option 1 name"
+        },
+        {
+          "value": "product.option_2.name",
+          "label": "Product — option 2 name"
+        },
+        {
+          "value": "product.option_3.name",
+          "label": "Product — option 3 name"
+        },
+        {
+          "value": "variant.value",
+          "label": "Variant — option value"
+        },
+        {
+          "value": "variant.title",
+          "label": "Variant — title"
+        },
+        {
+          "value": "variant.price",
+          "label": "Variant — price"
+        },
+        {
+          "value": "variant.compare_at_price",
+          "label": "Variant — compare-at price"
+        },
+        {
+          "value": "delivery.now",
+          "label": "Delivery — today"
+        },
+        {
+          "value": "delivery.dispatched",
+          "label": "Delivery — dispatched"
+        },
+        {
+          "value": "delivery.delivered",
+          "label": "Delivery — delivered"
+        },
+        {
+          "value": "countdown.days",
+          "label": "Countdown — days"
+        },
+        {
+          "value": "countdown.hours",
+          "label": "Countdown — hours"
+        },
+        {
+          "value": "countdown.minutes",
+          "label": "Countdown — minutes"
+        },
+        {
+          "value": "countdown.seconds",
+          "label": "Countdown — seconds"
+        }
+      ],
+      "default": ""
+    },
+        {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [
+    {
+      "name": "DM Text"
+    }
+  ]
+}
+{% endschema %}

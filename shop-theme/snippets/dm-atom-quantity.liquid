@@ -1,0 +1,39 @@
+{%- comment -%}
+  Shared markup for the `quantity` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-quantity.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- liquid
+  assign p = closest.product | default: product
+-%}
+{%- capture all_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-quantity
+  data-atom-type="quantity"
+  {% if min != blank %}data-quantity-min="{{ min }}"{% endif %}
+  {% if max != blank %}data-quantity-max="{{ max }}"{% endif %}
+  {% if step != blank %}data-quantity-step="{{ step }}"{% endif %}
+  {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+  {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+  {% if p != blank %}data-dm-product-id="{{ p.id }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</dm-quantity>

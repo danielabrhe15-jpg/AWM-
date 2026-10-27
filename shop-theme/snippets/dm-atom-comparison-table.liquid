@@ -1,0 +1,54 @@
+{%- comment -%}
+  Shared markup for the `comparison-table` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-comparison-table.liquid — as a Shopify theme block (shallow)
+    - the inline emitter                — as {% render %} inside a parent's
+                                          dm_inline setting, when nesting would
+                                          otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs. Slot content
+  arrives PRE-RENDERED as the `children` string (a snippet can't run
+  `content_for`, so the caller captures it).
+
+  No defaults here, deliberately — a {% schema %} `default` is an EDITOR seed,
+  not a render-time fallback. Our templates are machine-generated; an omitted
+  setting reads blank and its `!= blank` guard hides the attribute.
+
+  The featured-column HIGHLIGHT LAYER mirrors `render.tsx`: when
+  `highlight_column` > 0 we inject one behind-the-content <div> placed at that
+  grid column, spanning every row. Everything but its grid placement (bg /
+  radius / shadow / float) is owned by the `data-comparison-highlight-style`
+  CSS rules. Row count is read off the pre-rendered children (each row emits
+  `<dm-comparison-table-row`), so no row_count needs threading from JS.
+{%- endcomment -%}
+{%- capture table_inline -%}
+  {%- if highlight_color != blank -%}--dm-comparison-highlight-color: {{ highlight_color }}; {%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ table_inline }}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-comparison-table
+  data-atom-type="comparison-table"
+  {% if columns != blank %}data-comparison-columns="{{ columns }}"{% endif %}
+  {% if highlight_column != blank %}data-comparison-highlight="{{ highlight_column }}"{% endif %}
+  {% if highlight_style != blank %}data-comparison-highlight-style="{{ highlight_style }}"{% endif %}
+  {% if variant != blank %}data-comparison-variant="{{ variant }}"{% endif %}
+  {% if size != blank %}data-comparison-size="{{ size }}"{% endif %}
+  {% if size_sm != blank %}data-comparison-size-sm="{{ size_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- if highlight_column != blank and highlight_column != '0' -%}
+    {%- assign dm_ct_rows = children | split: '<dm-comparison-table-row' | size | minus: 1 -%}
+    {%- assign dm_ct_col = highlight_column | plus: 1 -%}
+    {%- if dm_ct_rows > 0 -%}
+      {%- assign dm_ct_rowspan = '1 / span ' | append: dm_ct_rows -%}
+    {%- else -%}
+      {%- assign dm_ct_rowspan = '1 / -1' -%}
+    {%- endif -%}
+    <div data-comparison-highlight-layer aria-hidden="true" style="grid-column: {{ dm_ct_col }}; grid-row: {{ dm_ct_rowspan }};"></div>
+  {%- endif -%}
+  {{ children }}
+</dm-comparison-table>

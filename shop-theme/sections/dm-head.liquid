@@ -1,0 +1,91 @@
+{%- comment -%}
+  DropMagic shared-head section. Emitted ONCE per DM page (first in the
+  template `order`), it carries everything the content sections share:
+  theme CSS + per-store vars, fonts, Swiper, the product JSON blob, and the
+  dm-*.js runtime. The content itself lives in separate `dm-section` sections
+  (one per top-level Section atom) — see `treeToShopifySections`.
+
+  This is `dm-page.liquid` MINUS the `content_for 'blocks'` + `data-dm-root`
+  wrapper. Assets stay as cached `<link>` / `<script src>` (dm-theme.css is
+  ~375 KB — far too large to inline into `{% stylesheet %}`), so this file is
+  STATIC (synced to every store) — the per-store `dm-theme-vars.css` is
+  resolved per store via `asset_url`. dm-dropmagic.js is document-scoped and
+  dm-theme.css is global (not `.dm-page`-scoped), so the content sections need
+  no shared root — they inherit these assets from the page DOM, exactly as the
+  header/footer group sections already do today.
+
+  The two stylesheet tags below ALSO appear in `dm-chrome.liquid` (header group)
+  and `dm-cart-drawer.liquid` (footer group). That is deliberate and permanent —
+  each independently-rendered Dropmagic root declares its own CSS, and the
+  browser dedupes by URL. Removing them here breaks every store that receives an
+  engine push from `sync-store-assets` without a publish, because only
+  `publishPages` writes `header-group.json`. See `dm-chrome.liquid` for the
+  reasoning and the byte offsets behind it.
+{%- endcomment -%}
+{{ 'dm-theme.css' | asset_url | stylesheet_tag }}
+{{ 'dm-theme-vars.css' | asset_url | stylesheet_tag }}
+{%- comment -%}
+  @font-face declarations for the picked title + body fonts. Snippet is
+  generated per store by the Trigger.dev `sync-fonts` task on publish.
+{%- endcomment -%}
+{% render 'dm-fonts' %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css">
+<script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js" defer></script>
+
+{%- comment -%}
+  Product JSON blob for the storefront runtime — TRIMMED to just what
+  dm-option-picker.js + dm-dropmagic.js read. Mirrors `DropmagicTrimmedProduct`
+  in `src/types/dropmagic.d.ts`. `closest.product` (section/template product)
+  falls back to `product` (product-template global), then to this section's own
+  `selected_product` — which publish stamps on a page that is NOT a product
+  template. Without that last hop a home page emitted no blob at all, so
+  `resolveVariantId` found no variants and every add-to-cart on it silently
+  did nothing. dm-dropmagic.js reads the blob document-wide, so one here serves
+  every content section on the page.
+{%- endcomment -%}
+{%- assign p = closest.product | default: product | default: section.settings.selected_product -%}
+{%- if p != blank -%}
+  {%- capture product_json -%}{"id":{{ p.id }},"options":[{%- for opt in p.options_with_values -%}{"name":{{ opt.name | json }},"position":{{ forloop.index }},"values":{{ opt.values | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],"variants":[{%- for v in p.variants -%}{"id":{{ v.id }},"option1":{{ v.option1 | json }},"option2":{{ v.option2 | json }},"option3":{{ v.option3 | json }},"price":{{ v.price }},"compare_at_price":{%- if v.compare_at_price -%}{{ v.compare_at_price }}{%- else -%}null{%- endif -%},"price_formatted":{{ v.price | money | json }},"compare_at_price_formatted":{%- if v.compare_at_price -%}{{ v.compare_at_price | money | json }}{%- else -%}""{%- endif -%},"discount_value_formatted":{%- if v.compare_at_price and v.compare_at_price > v.price -%}{{ v.compare_at_price | minus: v.price | money | json }}{%- else -%}""{%- endif -%},"available":{{ v.available }},"featured_media_id":{%- if v.featured_media -%}{{ v.featured_media.id }}{%- else -%}null{%- endif -%},"featured_media_src":{%- if v.featured_media -%}{{ v.featured_media | image_url: width: 192 | json }}{%- else -%}null{%- endif -%},"selling_plan_allocations":[{%- for a in v.selling_plan_allocations -%}{%- assign saved = v.price | minus: a.price -%}{"id":{{ a.selling_plan.id }},"price_formatted":{{ a.price | money | json }},"savings_formatted":{%- if saved > 0 -%}{{ saved | money | json }}{%- else -%}""{%- endif -%},"savings":{{ saved }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}{%- endcapture -%}
+  <script type="application/json" data-dm-product-id="{{ p.id }}">{{ product_json }}</script>
+{%- endif -%}
+
+<script src="{{ 'dm-dropmagic.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-accordion.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-tabs.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-carousel.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-marquee.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-list.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-media.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-countdown.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-delivery-date.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-progress-bar.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-stats-circle.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-before-after.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-option-picker.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-dropdown.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-selling-plan-picker.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-quantity.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-checkbox.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-input.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-bundle.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-bundle-units.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-dialog.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-sheet.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-sticky-header.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-sticky-bar.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "DM Head",
+  "tag": "div",
+  "settings": [
+    {
+      "type": "product",
+      "id": "selected_product",
+      "label": "Product",
+      "info": "Set by Dropmagic at publish time on a page that is not a product template, so the storefront runtime has the page's product. Left empty on a product template, which supplies its own."
+    }
+  ],
+  "presets": [{ "name": "DM Head" }]
+}
+{% endschema %}

@@ -1,0 +1,160 @@
+{%- comment -%}
+  `input` — thin shim. The markup lives in snippets/dm-atom-input.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only the schema block (the atom is a
+  leaf — it has no slot children, so there's no `content_for` to capture).
+{%- endcomment -%}
+{% render 'dm-atom-input',
+  action: block.settings.action,
+  name: block.settings.name,
+  type: block.settings.type,
+  placeholder: block.settings.placeholder,
+  default_value: block.settings.default_value,
+  required: block.settings.required,
+  max_length: block.settings.max_length,
+  rows: block.settings.rows,
+  min: block.settings.min,
+  max: block.settings.max,
+  step: block.settings.step,
+  variant: block.settings.variant,
+  radius: block.settings.radius,
+  size: block.settings.size,
+  size_sm: block.settings.size_sm,
+  bg: block.settings.bg,
+  color: block.settings.color,
+  placeholder_color: block.settings.placeholder_color,
+  border_width: block.settings.border_width,
+  border_color: block.settings.border_color,
+  margin_top: block.settings.margin_top,
+  margin_top_sm: block.settings.margin_top_sm,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes %}
+
+{% schema %}
+{
+  "name": "DM Input",
+  "tag": null,
+  "settings": [
+    {
+      "type": "select",
+      "id": "action",
+      "label": "Sends to",
+      "options": [
+        { "label": "Nothing", "value": "none" },
+        { "label": "Line item property", "value": "line-property" },
+        { "label": "Cart note", "value": "cart-note" },
+        { "label": "Cart attribute", "value": "cart-attribute" },
+        { "label": "Newsletter", "value": "newsletter" }
+      ],
+      "default": "line-property"
+    },
+    {
+      "type": "text",
+      "id": "name",
+      "label": "Field name",
+      "info": "The key the value is saved under on the order (\"Engraving\"). Prefix with _ to hide it from cart + checkout. Unused by Cart note and Newsletter.",
+      "default": "Engraving"
+    },
+    {
+      "type": "select",
+      "id": "type",
+      "label": "Type",
+      "options": [
+        { "label": "Text", "value": "text" },
+        { "label": "Text area", "value": "textarea" },
+        { "label": "Email", "value": "email" },
+        { "label": "Phone", "value": "tel" },
+        { "label": "Number", "value": "number" },
+        { "label": "Date", "value": "date" }
+      ],
+      "default": "text"
+    },
+    { "type": "text", "id": "placeholder", "label": "Placeholder" },
+    { "type": "text", "id": "default_value", "label": "Default value" },
+    {
+      "type": "select",
+      "id": "required",
+      "label": "Required",
+      "info": "Blocks add-to-cart until the field is filled.",
+      "options": [
+        { "label": "False", "value": "false" },
+        { "label": "True", "value": "true" }
+      ],
+      "default": "false"
+    },
+    { "type": "text", "id": "max_length", "label": "Max characters" },
+    { "type": "text", "id": "rows", "label": "Rows (text area)" },
+    { "type": "text", "id": "min", "label": "Min" },
+    { "type": "text", "id": "max", "label": "Max" },
+    { "type": "text", "id": "step", "label": "Step" },
+    {
+      "type": "select",
+      "id": "variant",
+      "label": "Variant",
+      "options": [
+        { "label": "Outline", "value": "outline" },
+        { "label": "Filled", "value": "filled" },
+        { "label": "Underline", "value": "underline" },
+        { "label": "Ghost", "value": "ghost" }
+      ],
+      "default": "outline"
+    },
+    {
+      "type": "select",
+      "id": "radius",
+      "label": "Radius",
+      "options": [
+        { "label": "None", "value": "none" },
+        { "label": "XS", "value": "xs" },
+        { "label": "SM", "value": "sm" },
+        { "label": "MD", "value": "md" },
+        { "label": "LG", "value": "lg" },
+        { "label": "XL", "value": "xl" }
+      ],
+      "default": "md"
+    },
+    {
+      "type": "select",
+      "id": "size",
+      "label": "Size",
+      "options": [
+        { "label": "SM", "value": "sm" },
+        { "label": "MD", "value": "md" },
+        { "label": "LG", "value": "lg" }
+      ],
+      "default": "md"
+    },
+    { "type": "text", "id": "size_sm", "label": "Size (Mobile)" },
+    {
+      "type": "text",
+      "id": "bg",
+      "label": "Background",
+      "info": "Any CSS color. Empty = the variant's theme default (`--dm-input` on Outline, `--dm-muted` on Filled, transparent on Underline / Ghost)."
+    },
+    { "type": "text", "id": "color", "label": "Text color" },
+    { "type": "text", "id": "placeholder_color", "label": "Placeholder color" },
+    { "type": "text", "id": "border_width", "label": "Border width" },
+    { "type": "text", "id": "border_color", "label": "Border color" },
+    { "type": "text", "id": "margin_top", "label": "Margin Top" },
+    { "type": "text", "id": "margin_top_sm", "label": "Margin Top (Mobile)" },
+    {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [
+    {
+      "name": "DM Input"
+    }
+  ]
+}
+{% endschema %}

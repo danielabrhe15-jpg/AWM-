@@ -1,0 +1,45 @@
+{%- comment -%}
+  Shared markup for the `avatar` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-avatar.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- capture avatar_inline -%}
+  {%- comment -%} `size` / `shape` / `object_position` are Pattern A enums → data-attrs
+     below, NOT inline vars (the raw tokens aren't valid CSS values). The ring +
+     shadow ARE inline-var slots — empty → CSS fallback (no ring, no shadow). {%- endcomment -%}
+  {%- if ring_width != blank -%}--dm-avatar-ring-width: {{ ring_width }}; {%- endif -%}
+  {%- if ring_color != blank -%}--dm-avatar-ring-color: {{ ring_color }}; {%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ avatar_inline }}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-avatar
+  data-atom-type="avatar"
+  {% if size != blank %}data-avatar-size="{{ size }}"{% endif %}
+  {%- comment -%} `shadow` is a Pattern A stop enum ("theme" emits nothing, so the
+     kit's per-frame dial applies); dm-theme.css `[data-shadow='md']` resolves it
+     into this atom's --dm-*-shadow slot. {%- endcomment -%}
+  {% if shadow != blank and shadow != 'theme' %}data-shadow="{{ shadow }}"{% endif %}
+  {% if shape != blank %}data-avatar-shape="{{ shape }}"{% endif %}
+  {% if object_position != blank %}data-avatar-position="{{ object_position }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  <img src="{{ src }}" alt="{% if alt != 'auto' %}{{ alt }}{% endif %}" />
+</dm-avatar>

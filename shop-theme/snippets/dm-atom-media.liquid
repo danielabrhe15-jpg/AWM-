@@ -1,0 +1,127 @@
+{%- comment -%}
+  Shared markup for the `media` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-media.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- liquid
+  assign p = closest.product | default: product
+  assign src = src
+  assign alt = alt
+  case bind
+    when 'product.image'
+      assign src = p.featured_image | img_url: '800x'
+      assign alt = p.title | escape
+    when 'variant.image'
+      assign src = '__DM_V_IMAGE_SRC__'
+      assign alt = '__DM_V_TITLE__'
+    when 'product.media.image'
+      assign src = '__DM_MEDIA_SRC__'
+      assign alt = '__DM_MEDIA_ALT__'
+    when 'line.image'
+      assign src = '__DM_L_IMAGE__'
+      assign alt = '__DM_L_TITLE__'
+  endcase
+-%}
+{%- assign src_lower = src | downcase | split: '?' | first -%}
+{%- comment -%}
+  Static gallery slide → the variant(s) it belongs to. TWO mechanisms, and the
+  runtime (`slideToVariant`, dm-dropmagic.js) checks them in this order:
+
+  1. `slide_variant_ids` — the variant ids this image is featured for, stamped
+     at publish from `products.variants[].image`. Order-independent and immune
+     to Shopify's media order, so it is preferred. Empty when a variant's image
+     isn't a DropMagic media (an imported product whose variant images live on
+     Shopify's CDN), which is exactly when 2 saves us.
+  2. `product_media_pos` — the 1-based position among the product's IMAGE
+     media, resolved here against the LIVE product. Counting image media only
+     mirrors the fill (`products.images` has no videos), so a Shopify-side
+     video doesn't shift every position after it.
+
+  Both are emitted; neither is load-bearing alone. Publishing only (1) shipped
+  once and silently broke auto-scroll on a real page — the variant images were
+  Shopify URLs, so nothing stamped, and (2) was no longer there to catch it.
+  No match on either → no attribute → that slide just never auto-scrolls.
+{%- endcomment -%}
+{%- assign slide_media_id = '' -%}
+{%- if product_media_pos != blank and p != blank -%}
+  {%- assign _pos_target = product_media_pos | plus: 0 -%}
+  {%- assign _img_i = 0 -%}
+  {%- for m in p.media -%}
+    {%- if m.media_type == 'image' -%}
+      {%- assign _img_i = _img_i | plus: 1 -%}
+      {%- if _img_i == _pos_target -%}
+        {%- assign slide_media_id = m.id -%}
+        {%- break -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- capture media_inline -%}
+  {%- if height != blank and height != 'auto' -%}height: {{ height }}px; {%- endif -%}
+  {%- if max_width != blank and max_width != 'auto' -%}max-width: {{ max_width }}px; {%- endif -%}
+  {%- comment -%} `radius` is a Pattern A enum → `data-media-radius` attr below,
+     NOT an inline `--dm-media-radius` var (the raw token `md` isn't valid CSS).
+     dm-theme.css `[data-media-radius='md']` resolves the token. {%- endcomment -%}
+  {%- if border_width != blank -%}--dm-media-border-width: {{ border_width }}; {%- endif -%}
+  {%- if border_color != blank -%}--dm-media-border-color: {{ border_color }}; {%- endif -%}
+  {%- if frame_bg != blank -%}--dm-media-frame-bg: {{ frame_bg }}; {%- endif -%}
+  {%- if frame_padding != blank -%}--dm-media-frame-padding: {{ frame_padding }}; {%- endif -%}
+  {%- if frame_padding_bottom != blank -%}--dm-media-frame-padding-bottom: {{ frame_padding_bottom }}; {%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ media_inline }}{{ custom_styles_inline }}{%- endcapture -%}
+<div
+  data-atom-type="media"
+  {% if bind != blank %}data-bind="{{ bind }}"{% endif %}
+  {% if slide_variant_ids != blank %}data-slide-variant-id="{{ slide_variant_ids }}"{% endif %}
+  {% if slide_media_id != blank %}data-slide-media-id="{{ slide_media_id }}"{% endif %}
+  {% if aspect_ratio != blank %}data-media-ratio="{{ aspect_ratio }}"{% endif %}
+  {% if aspect_ratio_sm != blank %}data-media-ratio-sm="{{ aspect_ratio_sm }}"{% endif %}
+  {% if object_position != blank %}data-media-position="{{ object_position }}"{% endif %}
+  {% if radius != blank %}data-media-radius="{{ radius }}"{% endif %}
+  {%- comment -%} `shadow` is a Pattern A stop enum ("theme" emits nothing, so the
+     kit's per-frame dial applies); dm-theme.css `[data-shadow='md']` resolves it
+     into this atom's --dm-*-shadow slot. {%- endcomment -%}
+  {% if shadow != blank and shadow != 'theme' %}data-shadow="{{ shadow }}"{% endif %}
+  {% if height != blank and height != 'auto' %}data-media-height{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {%- if src_lower contains '.mp4' or src_lower contains '.webm' or src_lower contains '.ogg' or src_lower contains '.mov' -%}
+    data-media-video-style="{{ video_style | default: 'minimal' }}"
+  {%- endif -%}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- if src_lower contains '.mp4' or src_lower contains '.webm' or src_lower contains '.ogg' or src_lower contains '.mov' -%}
+    <video
+      src="{{ src }}"
+      {% if poster != blank and poster != 'auto' %}poster="{{ poster }}"{% endif %}
+      {% if video_style == 'silent' %}autoplay loop muted{% endif %}
+      {% if video_style == 'native' %}controls{% endif %}
+      {% if video_style == 'ambient' %}autoplay loop muted{% endif %}
+      playsinline
+    ></video>
+    {%- comment -%} Play / speaker glyph on a dedicated child layer (mirrors
+       the React Media renderer) — keeps a single glyph source across the
+       canvas + storefront. {%- endcomment -%}
+    {%- if video_style == 'minimal' or video_style == 'silent' -%}<div data-media-glyph aria-hidden="true"></div>{%- endif -%}
+  {%- else -%}
+    <img src="{{ src }}" alt="{% if alt != 'auto' %}{{ alt }}{% endif %}" />
+  {%- endif -%}
+  {%- if overlay != blank -%}<div data-media-overlay aria-hidden="true" style="background:{{ overlay }};"></div>{%- endif -%}
+</div>

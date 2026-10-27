@@ -1,0 +1,122 @@
+{%- comment -%}
+  Shared markup for the `progress-bar` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-progress-bar.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- assign source = source | default: 'duration' -%}
+{%- capture style -%}
+  {%- if radius != blank %}--dm-progress-bar-radius: {{ radius }};{% endif -%}
+  {%- if track_color != blank %}--dm-progress-bar-track: {{ track_color }};{% endif -%}
+  {%- if fill_color != blank %}--dm-progress-bar-fill: {{ fill_color }};{% endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ style | strip }}{{ custom_styles_inline }}{%- endcapture -%}
+{%- if source == 'cart-goal' -%}
+  {%- comment -%}
+    Free-shipping reward bar — a pure visualizer of the cart's progress toward
+    the store's free-shipping goal. The goal is a STORE policy, not a bar
+    setting: it lives on the cart-drawer section (`section.settings.goal_amount`
+    in cents / unit count, `goal_type`), baked from `stores.settings.cart.reward`
+    at publish. The "you're $X away" copy is a SEPARATE bound Text atom
+    (`cart.goal_remaining`) — this bar renders NO text. The fill re-resolves from
+    the live `cart` each time dm-cart.js refreshes the section, so it tracks the
+    cart. dm-progress-bar.js skips its time tick for source="cart-goal".
+  {%- endcomment -%}
+  {%- liquid
+    assign goal_amount = section.settings.goal_amount | default: 0
+    assign goal_type = section.settings.goal_type | default: 'subtotal'
+    # A goal of 0 means the store has NO free-shipping threshold — the merchant
+    # cleared it in the Cart panel because shipping is already free. That is not
+    # "goal unmet": rendering a permanently empty track promises a reward the
+    # store does not have. So treat it exactly like a converted market and draw
+    # nothing. A goal that is ABSENT (nil, i.e. this bar is not in the cart
+    # drawer) keeps the old inert behaviour.
+    assign goal_unavailable = false
+    if section.settings.goal_amount != blank and goal_amount <= 0
+      assign goal_unavailable = true
+    endif
+    # Markets / local pricing — `cart.total_price` is the PRESENTMENT total
+    # while `goal_amount` is baked in SHOP-currency cents, and Liquid has no
+    # conversion rate (same guard as dm-atom-text.liquid). A fill computed from
+    # two different currencies fills on the first item, so render nothing —
+    # the reward copy hides in that market too.
+    if goal_amount > 0
+      if goal_type != 'quantity'
+        if cart.currency.iso_code != shop.currency
+          assign goal_unavailable = true
+        endif
+      endif
+    endif
+    assign goal_current = cart.total_price
+    if goal_type == 'quantity'
+      assign goal_current = cart.item_count
+    endif
+    assign pct = 0
+    if goal_amount > 0
+      assign pct = goal_current | times: 1.0 | divided_by: goal_amount | at_most: 1 | at_least: 0
+    endif
+  -%}
+  {%- unless goal_unavailable -%}
+  <dm-progress-bar
+    data-atom-type="progress-bar"
+    data-progress-source="cart-goal"
+    {% if size != blank %}data-progress-size="{{ size }}"{% endif %}
+    {{ custom_styles_attrs }}
+    {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+    {{ shopify_attributes }}
+  >
+    <div data-progress-track>
+      <div data-progress-fill style="transform: scaleX({{ pct }}); transform-origin: left center;"></div>
+    </div>
+  </dm-progress-bar>
+  {%- endunless -%}
+{%- elsif source == 'static' -%}
+  {%- comment -%}
+    Static fill — a fixed, non-animated bar at the authored `value` percent
+    (0–100). No time tick; dm-progress-bar.js skips its loop for
+    source="static". The fill is painted once inline here.
+  {%- endcomment -%}
+  {%- liquid
+    assign pct = value | default: 0 | times: 1.0 | divided_by: 100 | at_most: 1 | at_least: 0
+  -%}
+  <dm-progress-bar
+    data-atom-type="progress-bar"
+    data-progress-source="static"
+    {% if size != blank %}data-progress-size="{{ size }}"{% endif %}
+    {{ custom_styles_attrs }}
+    {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+    {{ shopify_attributes }}
+  >
+    <div data-progress-track>
+      <div data-progress-fill style="transform: scaleX({{ pct }}); transform-origin: left center;"></div>
+    </div>
+  </dm-progress-bar>
+{%- else -%}
+  <dm-progress-bar
+    data-atom-type="progress-bar"
+    {% if progress_direction != blank %}data-progress-mode="{{ progress_direction }}"{% endif %}
+    {% if duration_seconds != blank %}data-progress-duration="{{ duration_seconds }}"{% endif %}
+    {% if size != blank %}data-progress-size="{{ size }}"{% endif %}
+    {{ custom_styles_attrs }}
+    {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+    {{ shopify_attributes }}
+  >
+    <div data-progress-track>
+      <div data-progress-fill></div>
+    </div>
+  </dm-progress-bar>
+{%- endif -%}

@@ -1,0 +1,486 @@
+{%- comment -%}
+  `card` — thin shim. The markup lives in snippets/dm-atom-card.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only what a snippet CAN'T do:
+  `content_for` (template-source-only) and the schema block.
+{%- endcomment -%}
+{%- capture children -%}
+  {% content_for 'blocks' %}
+  {{ block.settings.dm_inline_children }}
+{%- endcapture -%}
+{% render 'dm-atom-card',
+  bind: block.settings.bind,
+  picker_option: block.settings.picker_option,
+  swatch: block.settings.swatch,
+  bar_id: block.settings.bar_id,
+  picker_kind: block.settings.picker_kind,
+  combination: block.settings.combination,
+  padding: block.settings.padding,
+  padding_sm: block.settings.padding_sm,
+  direction: block.settings.direction,
+  direction_sm: block.settings.direction_sm,
+  gap: block.settings.gap,
+  gap_sm: block.settings.gap_sm,
+  align: block.settings.align,
+  align_sm: block.settings.align_sm,
+  justify: block.settings.justify,
+  justify_sm: block.settings.justify_sm,
+  columns: block.settings.columns,
+  columns_sm: block.settings.columns_sm,
+  wrap: block.settings.wrap,
+  wrap_sm: block.settings.wrap_sm,
+  radius: block.settings.radius,
+  bg: block.settings.bg,
+  ring_width: block.settings.ring_width,
+  ring_color: block.settings.ring_color,
+  shadow: block.settings.shadow,
+  margin_top: block.settings.margin_top,
+  margin_top_sm: block.settings.margin_top_sm,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes,
+  children: children %}
+
+{% schema %}
+{
+  "name": "DM Card",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "bind",
+      "label": "Bind",
+      "info": "Manual-picker binding — the value this card represents inside its parent provider (an option value like \"2 Pack\", or a selling-plan id). Published by DropMagic; edit the bind in the builder, not here."
+    },
+    {
+      "type": "text",
+      "id": "picker_option",
+      "label": "Picker option key",
+      "info": "option_1 / option_2 / option_3 — which product option the parent manual OptionPicker drives. Managed by DropMagic."
+    },
+    {
+      "type": "text",
+      "id": "swatch",
+      "label": "Swatch colour",
+      "info": "This card's colour when it binds a manual colour picker, resolved at publish (merchant override, else the name guess). Empty falls back to reading the bind as a CSS colour name. Managed by DropMagic — set colours in the builder's product panel."
+    },
+    {
+      "type": "text",
+      "id": "bar_id",
+      "label": "Bundle bar id",
+      "info": "Tier id this card represents inside its parent Bundle. Published by DropMagic; managed in the Offer panel, not here."
+    },
+    {
+      "type": "text",
+      "id": "picker_kind",
+      "label": "Picker kind",
+      "info": "selling_plan — set when this card sits inside a manual SellingPlanPicker (its bind is a selling-plan id / one_time). Managed by DropMagic."
+    },
+    {
+      "type": "text",
+      "id": "combination",
+      "label": "Color scheme",
+      "info": "Index of a brand-kit color scheme (\"0\" = lightest). Empty inherits the section's scheme. Text, not a select: the value is a per-store index, so there is no fixed option list. Managed by Dropmagic — pick the scheme in the builder."
+    },
+    {
+      "type": "select",
+      "id": "padding",
+      "label": "Padding",
+      "options": [
+        {
+          "label": "0",
+          "value": "0"
+        },
+        {
+          "label": "2",
+          "value": "2"
+        },
+        {
+          "label": "3",
+          "value": "3"
+        },
+        {
+          "label": "4",
+          "value": "4"
+        },
+        {
+          "label": "6",
+          "value": "6"
+        },
+        {
+          "label": "8",
+          "value": "8"
+        }
+      ],
+      "default": "4"
+    },
+    {
+      "type": "select",
+      "id": "padding_sm",
+      "label": "Padding (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "0",
+          "value": "0"
+        },
+        {
+          "label": "2",
+          "value": "2"
+        },
+        {
+          "label": "3",
+          "value": "3"
+        },
+        {
+          "label": "4",
+          "value": "4"
+        },
+        {
+          "label": "6",
+          "value": "6"
+        },
+        {
+          "label": "8",
+          "value": "8"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "direction",
+      "label": "Direction",
+      "options": [
+        {
+          "label": "Row",
+          "value": "row"
+        },
+        {
+          "label": "Column",
+          "value": "column"
+        }
+      ],
+      "default": "column"
+    },
+    {
+      "type": "select",
+      "id": "direction_sm",
+      "label": "Direction (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Row",
+          "value": "row"
+        },
+        {
+          "label": "Column",
+          "value": "column"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "text",
+      "id": "gap",
+      "label": "Gap",
+      "default": "4"
+    },
+    {
+      "type": "text",
+      "id": "gap_sm",
+      "label": "Gap (Mobile)"
+    },
+    {
+      "type": "select",
+      "id": "align",
+      "label": "Align",
+      "options": [
+        {
+          "label": "Start",
+          "value": "start"
+        },
+        {
+          "label": "Center",
+          "value": "center"
+        },
+        {
+          "label": "End",
+          "value": "end"
+        },
+        {
+          "label": "Stretch",
+          "value": "stretch"
+        }
+      ],
+      "default": "stretch"
+    },
+    {
+      "type": "select",
+      "id": "align_sm",
+      "label": "Align (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Start",
+          "value": "start"
+        },
+        {
+          "label": "Center",
+          "value": "center"
+        },
+        {
+          "label": "End",
+          "value": "end"
+        },
+        {
+          "label": "Stretch",
+          "value": "stretch"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "justify",
+      "label": "Justify",
+      "options": [
+        {
+          "label": "Start",
+          "value": "start"
+        },
+        {
+          "label": "Center",
+          "value": "center"
+        },
+        {
+          "label": "End",
+          "value": "end"
+        },
+        {
+          "label": "Between",
+          "value": "between"
+        }
+      ],
+      "default": "start"
+    },
+    {
+      "type": "select",
+      "id": "justify_sm",
+      "label": "Justify (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Start",
+          "value": "start"
+        },
+        {
+          "label": "Center",
+          "value": "center"
+        },
+        {
+          "label": "End",
+          "value": "end"
+        },
+        {
+          "label": "Between",
+          "value": "between"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "columns",
+      "label": "Columns",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto"
+        },
+        {
+          "label": "2",
+          "value": "2"
+        },
+        {
+          "label": "3",
+          "value": "3"
+        },
+        {
+          "label": "4",
+          "value": "4"
+        }
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "select",
+      "id": "columns_sm",
+      "label": "Columns (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Auto",
+          "value": "auto"
+        },
+        {
+          "label": "2",
+          "value": "2"
+        },
+        {
+          "label": "3",
+          "value": "3"
+        },
+        {
+          "label": "4",
+          "value": "4"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "wrap",
+      "label": "Wrap",
+      "options": [
+        {
+          "label": "Nowrap",
+          "value": "nowrap"
+        },
+        {
+          "label": "Wrap",
+          "value": "wrap"
+        }
+      ],
+      "default": "nowrap"
+    },
+    {
+      "type": "select",
+      "id": "wrap_sm",
+      "label": "Wrap (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Nowrap",
+          "value": "nowrap"
+        },
+        {
+          "label": "Wrap",
+          "value": "wrap"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "radius",
+      "label": "Radius",
+      "info": "Border-radius scale token. Resolves to the brand-kit's --dm-radius-* values.",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Xs",
+          "value": "xs"
+        },
+        {
+          "label": "Sm",
+          "value": "sm"
+        },
+        {
+          "label": "Md",
+          "value": "md"
+        },
+        {
+          "label": "Lg",
+          "value": "lg"
+        },
+        {
+          "label": "Xl",
+          "value": "xl"
+        }
+      ],
+      "default": "md"
+    },
+    {
+      "type": "text",
+      "id": "bg",
+      "label": "Background",
+      "info": "Any CSS color — hex, rgb, oklch, or var(--dm-X). Empty = inherit theme."
+    },
+    {
+      "type": "text",
+      "id": "ring_width",
+      "label": "Ring width"
+    },
+    {
+      "type": "text",
+      "id": "ring_color",
+      "label": "Ring color"
+    },
+    {
+      "type": "text",
+      "id": "shadow",
+      "label": "Shadow"
+    },
+    {
+      "type": "text",
+      "id": "margin_top",
+      "label": "Margin Top"
+    },
+    {
+      "type": "text",
+      "id": "margin_top_sm",
+      "label": "Margin Top (Mobile)"
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "liquid",
+      "id": "dm_inline_children",
+      "label": "Inlined children (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [
+    {
+      "name": "DM Card"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@theme"
+    }
+  ]
+}
+{% endschema %}

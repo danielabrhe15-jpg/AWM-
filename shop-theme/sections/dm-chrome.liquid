@@ -1,0 +1,71 @@
+{%- comment -%}
+  Dropmagic stylesheet carrier for the HEADER GROUP. Zero markup — its only job
+  is to be `order[0]` of `header-group.json` so `dm-theme.css` is declared
+  before any Dropmagic HTML on the page.
+
+  WHY IT EXISTS. Section groups render from `layout/theme.liquid`, ahead of the
+  body template that carries `dm-head`. Measured on a live product page
+  (2026-09-10):
+
+      82,956  </head>
+      86,903  DM announcement bar   ┐ parsed and painted with
+      90,800  DM header             ┘ no Dropmagic CSS at all
+     109,551  <link dm-theme.css>   ← first declaration
+
+  An in-body stylesheet blocks rendering of what FOLLOWS it, not what preceded
+  it — so those 22.6 KB paint raw, then restyle. Visible signature: icon SVGs
+  are emitted `width="100%" height="100%"` and carousel arrows are hidden by
+  CSS alone (`data-arrows-show="false"`), so a missing stylesheet shows them
+  full-bleed. Off the Dropmagic templates it is worse: `/collections/all` has
+  no `dm-head` at all, so its only declaration was the one `dm-cart-drawer`
+  emits from the FOOTER group, at byte 240,600 of 280,063.
+
+  The fix is placement, not weight — dm-theme.css is 476 KB raw but 31 KB
+  brotli behind a one-year `cache-control`.
+
+  THE DUPLICATION IS THE RULE, NOT DEBT. `dm-head`, `dm-cart-drawer` and this
+  file all declare the same two sheets, and all three keep them. Every root
+  Dropmagic can render from — a page template, the header group, the footer
+  group — is reached independently, so each one declares the CSS it needs
+  rather than assuming a sibling got there first. `dm-cart-drawer.liquid` has
+  carried that rule since it shipped; this file extends it to the header.
+
+  It is also load-bearing, not just tidy. Engine `.liquid` files and
+  `header-group.json` have INDEPENDENT writers: `sync-store-assets` pushes the
+  whole engine set and stamps only `shopify_sync.engine`, while the group file
+  is written by `publishPages` alone. Strip the declaration from `dm-head` and
+  any store that gets the task without a publish has neither — an unstyled
+  storefront with no way back until the merchant happens to publish. Some never
+  will. So: never "consolidate" these into one declaration.
+
+  Cost of holding the rule: two or three `<link>`s to one URL. That is one
+  request, one shared parse, and one `RuleSet` in Blink — the thing to avoid is
+  putting them on EVERY `dm-section` (a dozen-plus copies make style recalc walk
+  a dozen copies of a 476 KB sheet), not the three roots.
+
+  NOT the fonts. `dm-fonts` is a ~6 KB inline <style> (26 @font-face) already
+  emitted twice per page; a third copy costs more than the swap it would save.
+  The fix there is folding it into the per-store `dm-theme-vars.css`.
+
+  NO markup, NO runtime JS. The dm-*.js set stays in `dm-head` — moving it here
+  would ship 216 KB to every collection / cart / blog page. That the DM header's
+  carousel and menu are currently inert on those pages is a real bug, and its
+  own decision.
+{%- endcomment -%}
+{{ 'dm-theme.css' | asset_url | stylesheet_tag }}
+{{ 'dm-theme-vars.css' | asset_url | stylesheet_tag }}
+{%- comment -%}
+  Swiper's stylesheet, on the same reasoning: the announcement bar is a
+  carousel, and without it every slide stacks vertically instead of sitting in
+  one clipped row. Same URL as `dm-head`'s — the browser dedupes.
+{%- endcomment -%}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css">
+
+{% schema %}
+{
+  "name": "DM Chrome",
+  "tag": "div",
+  "class": "dm-chrome",
+  "settings": []
+}
+{% endschema %}

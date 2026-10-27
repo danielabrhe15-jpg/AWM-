@@ -1,0 +1,87 @@
+{%- comment -%}
+  Shared markup for the `input` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-input.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter      — as {% render %} inside a parent's
+                                dm_inline setting, when nesting would
+                                otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+
+  Two things this snippet owns that the React renderer does not:
+
+  1. `field_name` — the mirror of `resolveInputName()` in the atom's
+     schema.ts. Three of the five actions own their key (Shopify fixes
+     `note` and `contact[email]`), so `name` only speaks for the two that
+     take an arbitrary key. Keep the two in sync.
+
+  2. The PREFILL. A cart-level field has to come back showing what is
+     already in the cart — the destination implies the source, which is
+     the whole reason `action` needs no companion bind prop.
+{%- endcomment -%}
+{%- liquid
+  assign p = closest.product | default: product
+
+  assign field_name = name
+  assign field_value = default_value
+
+  if action == 'cart-note'
+    assign field_name = 'note'
+    assign field_value = cart.note
+  elsif action == 'newsletter'
+    assign field_name = 'contact[email]'
+  elsif action == 'cart-attribute'
+    assign field_name = 'attributes[' | append: name | append: ']'
+    assign field_value = cart.attributes[name]
+  elsif action == 'line-property'
+    assign field_name = 'properties[' | append: name | append: ']'
+  endif
+-%}
+{%- capture input_inline -%}
+  {%- if bg != blank -%}--dm-input-bg: {{ bg }}; {%- endif -%}
+  {%- if color != blank -%}--dm-input-color: {{ color }}; {%- endif -%}
+  {%- if placeholder_color != blank -%}--dm-input-placeholder-color: {{ placeholder_color }}; {%- endif -%}
+  {%- if border_width != blank -%}--dm-input-border-width: {{ border_width }}; {%- endif -%}
+  {%- if border_color != blank -%}--dm-input-border-color: {{ border_color }}; {%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ input_inline }}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-input
+  data-atom-type="input"
+  {% if p != blank %}data-dm-product-id="{{ p.id }}"{% endif %}
+  {% if action != blank %}data-input-action="{{ action }}"{% endif %}
+  {% if type != blank %}data-input-type="{{ type }}"{% endif %}
+  {% if name != blank %}data-input-name="{{ name | escape }}"{% endif %}
+  {% if required == 'true' %}data-input-required="true"{% endif %}
+  {% if variant != blank %}data-input-variant="{{ variant }}"{% endif %}
+  {% if radius != blank %}data-input-radius="{{ radius }}"{% endif %}
+  {% if size != blank %}data-input-size="{{ size }}"{% endif %}
+  {% if size_sm != blank %}data-input-size-sm="{{ size_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- if type == 'textarea' -%}
+    <textarea
+      name="{{ field_name }}"
+      {% if placeholder != blank %}placeholder="{{ placeholder | escape }}"{% endif %}
+      {% if rows != blank %}rows="{{ rows }}"{% endif %}
+      {% if max_length != blank %}maxlength="{{ max_length }}"{% endif %}
+      {% if required == 'true' %}required{% endif %}
+    >{{ field_value | escape }}</textarea>
+  {%- else -%}
+    <input
+      type="{{ type | default: 'text' }}"
+      name="{{ field_name }}"
+      value="{{ field_value | escape }}"
+      {% if placeholder != blank %}placeholder="{{ placeholder | escape }}"{% endif %}
+      {% if max_length != blank %}maxlength="{{ max_length }}"{% endif %}
+      {% if min != blank %}min="{{ min }}"{% endif %}
+      {% if max != blank %}max="{{ max }}"{% endif %}
+      {% if step != blank %}step="{{ step }}"{% endif %}
+      {% if required == 'true' %}required{% endif %}
+    />
+  {%- endif -%}
+</dm-input>

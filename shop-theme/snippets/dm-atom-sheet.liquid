@@ -1,0 +1,92 @@
+{%- comment -%}
+  Shared markup for the `sheet` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-sheet.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  Sheet atom — root of a side drawer. Holds exactly one SheetTrigger (the
+  inline clickable opener) and one SheetContent (the drawer body), each a
+  Shopify static block placed by `{% content_for 'block', id: … %}`. Open
+  state is `data-state` on `<dm-sheet>`; dm-theme.css owns all show/hide +
+  slide animation off it (per `data-sheet-side`). Behavior (open / close /
+  backdrop / Escape) lives in dm-sheet.js. Mirrors `sheet/render.tsx`.
+
+  The close button is hardcoded chrome (a ✕) — `closing_icon` only toggles
+  whether it renders; full icon-family resolution is editor-side only.
+{%- endcomment -%}
+{%- capture sheet_inline -%}
+  {%- if overlay_color != blank -%}--dm-sheet-overlay: {{ overlay_color }};{%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ sheet_inline }}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-sheet
+  data-atom-type="sheet"
+  data-state="closed"
+  {% if open_on != blank %}data-sheet-open-on="{{ open_on }}"{% endif %}
+  {% comment %}
+    Initial cart-empty state for the body toggle (CSS hides the inactive body).
+    dm-cart.js flips this for the optimistic add so the drawer opens instantly
+    already-filled, then applyPanel re-syncs it from each server re-render.
+    Non-trimming comment: keeps the newline separators between attributes.
+  {% endcomment %}
+  {% if open_on == 'cart' %}data-cart-empty="{% if cart == empty %}true{% else %}false{% endif %}"{% endif %}
+  {% if combination != blank %}data-theme-combination="{{ combination }}"{% endif %}
+  {% if side != blank %}data-sheet-side="{{ side }}"{% endif %}
+  {% if size != blank %}data-sheet-size="{{ size }}"{% endif %}
+  {% if animation != blank %}data-sheet-animation="{{ animation }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- comment -%}
+    Cart sheets are trigger-less (opened by dm-cart.js on cart events); only
+    non-cart (mobile-nav) sheets render their inline SheetTrigger.
+  {%- endcomment -%}
+  {%- if open_on != 'cart' -%}
+    {{ trigger_html }}
+  {%- endif -%}
+  <div class="dm-sheet__overlay">
+    <div class="dm-sheet__panel">
+      {%- comment -%}
+        Cart-drawer empty state — a separate SheetContent body (V1's
+        cart-is-empty branch). has_empty is set at publish only when an
+        emptyContent body exists, so we never content_for a missing block.
+
+        Both bodies are rendered (wrapped in display:contents divs); CSS shows
+        the one matching data-cart-empty on <dm-sheet>. Rendering both — rather
+        than the old server cart-is-empty either/or — is what lets dm-cart.js
+        flip empty to filled and open INSTANTLY on the first add, with no server
+        round-trip before the drawer appears.
+      {%- endcomment -%}
+      {%- if open_on == 'cart' and has_empty -%}
+        <div data-dm-cart-body="filled">
+          {{ content_html }}
+        </div>
+        <div data-dm-cart-body="empty">
+          {{ empty_content_html }}
+        </div>
+      {%- else -%}
+        {{ content_html }}
+      {%- endif -%}
+      {%- if closing_icon != blank -%}
+        <button type="button" data-dm-sheet-close aria-label="Close" class="dm-sheet__close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true" width="100%" height="100%"><path fill="currentColor" d="M205.66 194.34a8 8 0 0 1-11.32 11.32L128 139.31l-66.34 66.35a8 8 0 0 1-11.32-11.32L116.69 128 50.34 61.66a8 8 0 0 1 11.32-11.32L128 116.69l66.34-66.35a8 8 0 0 1 11.32 11.32L139.31 128Z"/></svg>
+        </button>
+      {%- endif -%}
+    </div>
+  </div>
+</dm-sheet>

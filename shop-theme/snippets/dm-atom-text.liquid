@@ -1,0 +1,456 @@
+{%- comment -%}
+  Shared markup for the `text` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-text.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- liquid
+  assign p = closest.product | default: product
+  # Selected variant — `selected_or_first_available_variant` matches Shopify's
+  # default product-page initial state. `product.price` / `product.compare_at_price`
+  # binds reflect this variant; the centralized listener in dm-dropmagic.js
+  # updates them on `dm:variant-resolved` by reading the active card's
+  # `data-variant-price` / `data-variant-compare-at-price` data attrs.
+  assign selected_variant = p.selected_or_first_available_variant
+  assign content = content
+  # Free-shipping goal — the threshold is a store policy baked onto the
+  # cart-drawer section (`section.settings.goal_amount` in cents / unit count,
+  # `goal_type`). Resolved once here for both whole-text binds (case below) and
+  # sub-text spans (__DM_C_GOAL_* tokens). Outside the drawer the setting is nil
+  # → goal_amount 0 → empty remaining / "0%" (safe no-op). Re-runs on every
+  # dm-cart.js Section Rendering API refresh, so it tracks the live cart.
+  assign dm_goal_amount = section.settings.goal_amount | default: 0
+  assign dm_goal_type = section.settings.goal_type | default: 'subtotal'
+  # A goal of 0 means the store has NO free-shipping threshold — the merchant
+  # cleared it in the Cart panel because shipping is already free. `dm_is_reached`
+  # then stays false, so without this the UNREACHED message still renders and
+  # substitutes an empty `dm_goal_remaining`, i.e. "You're  away from free
+  # shipping!" — a threshold claim on a store that has none. Hide everything
+  # goal-driven instead, exactly as in a converted market. A goal that is ABSENT
+  # (nil, i.e. this Text is not in the cart drawer) keeps the old inert
+  # behaviour: the gates don't apply and the atom renders as authored.
+  assign dm_goal_off = false
+  if section.settings.goal_amount != blank and dm_goal_amount <= 0
+    assign dm_goal_off = true
+  endif
+  # Markets / local pricing — `cart.total_price` is the buyer's PRESENTMENT
+  # total, while `goal_amount` is baked in SHOP-currency cents at publish and
+  # Liquid exposes no conversion rate. In a market that converts prices the two
+  # sides are therefore different currencies: a 45 CAD goal reads as 45 SEK
+  # (~6 CAD) and the bar unlocks on the first item. Until the threshold can be
+  # converted, treat a SUBTOTAL goal as unset there and hide the reward copy
+  # (dm_goal_converted_away, below) rather than promise free shipping the buyer
+  # has not earned. A `quantity` goal counts items, so it stays correct.
+  assign dm_goal_converted_away = false
+  if dm_goal_amount > 0
+    if dm_goal_type != 'quantity'
+      if cart.currency.iso_code != shop.currency
+        assign dm_goal_converted_away = true
+        assign dm_goal_amount = 0
+      endif
+    endif
+  endif
+  assign dm_goal_remaining = ''
+  assign dm_goal_progress = '0%'
+  # Set when this Text composes the goal into its copy as a sub-text span
+  # (__DM_C_GOAL_* token) — such a Text is goal-driven even though its own
+  # `bind` is empty, so it hides with the gates in a converted market.
+  assign dm_has_goal_token = false
+  # dm_is_reached drives the whole-atom VISIBILITY gates cart.goal_reached /
+  # cart.goal_unreached (which show/hide the whole Text via the dm_gate_hide +
+  # unless wrapper near the end of this file). False outside the cart drawer
+  # (no goal_amount setting), so a gated Text elsewhere just stays visible.
+  assign dm_is_reached = false
+  if dm_goal_amount > 0
+    assign dm_goal_current = cart.total_price
+    if dm_goal_type == 'quantity'
+      assign dm_goal_current = cart.item_count
+    endif
+    assign dm_goal_pct = dm_goal_current | times: 100 | divided_by: dm_goal_amount
+    if dm_goal_pct > 100
+      assign dm_goal_pct = 100
+    endif
+    assign dm_goal_progress = dm_goal_pct | append: '%'
+    assign dm_goal_rem = dm_goal_amount | minus: dm_goal_current
+    if dm_goal_rem > 0
+      if dm_goal_type == 'quantity'
+        assign dm_goal_remaining = dm_goal_rem
+      else
+        assign dm_goal_remaining = dm_goal_rem | money
+      endif
+    else
+      assign dm_is_reached = true
+    endif
+  endif
+  case bind
+    when 'product.title'
+      assign content = p.title | escape
+    when 'product.price'
+      if selected_variant != blank
+        assign content = selected_variant.price | money
+      else
+        assign content = p.price | money
+      endif
+    when 'product.compare_at_price'
+      if selected_variant != blank and selected_variant.compare_at_price > selected_variant.price
+        assign content = selected_variant.compare_at_price | money
+      elsif selected_variant == blank and p.compare_at_price > p.price
+        assign content = p.compare_at_price | money
+      else
+        assign content = ''
+      endif
+    when 'product.vendor'
+      assign content = p.vendor | escape
+    when 'product.handle'
+      assign content = p.handle | escape
+    when 'product.type'
+      assign content = p.type | escape
+    when 'product.description'
+      assign content = p.description
+    when 'product.option_1.name'
+      assign opt = p.options_with_values[0]
+      if opt != blank
+        assign content = opt.name | escape
+      else
+        assign content = ''
+      endif
+    when 'product.option_2.name'
+      assign opt = p.options_with_values[1]
+      if opt != blank
+        assign content = opt.name | escape
+      else
+        assign content = ''
+      endif
+    when 'product.option_3.name'
+      assign opt = p.options_with_values[2]
+      if opt != blank
+        assign content = opt.name | escape
+      else
+        assign content = ''
+      endif
+    when 'option_1.selected'
+      # Product-scoped: the initial variant's value for option 1 ("Jet Black").
+      # dm-dropmagic.js re-resolves it live as the shopper picks.
+      if selected_variant != blank and selected_variant.option1 != blank
+        assign content = selected_variant.option1 | escape
+      else
+        assign content = ''
+      endif
+    when 'option_2.selected'
+      if selected_variant != blank and selected_variant.option2 != blank
+        assign content = selected_variant.option2 | escape
+      else
+        assign content = ''
+      endif
+    when 'option_3.selected'
+      if selected_variant != blank and selected_variant.option3 != blank
+        assign content = selected_variant.option3 | escape
+      else
+        assign content = ''
+      endif
+    when 'variant.value'
+      assign content = '__DM_V_VALUE__'
+    when 'variant.title'
+      assign content = '__DM_V_TITLE__'
+    when 'variant.price'
+      assign content = '__DM_V_PRICE__'
+    when 'variant.compare_at_price'
+      assign content = '__DM_V_COMPARE_AT__'
+    when 'selling_plan.name'
+      assign content = '__DM_SP_NAME__'
+    when 'selling_plan.group_name'
+      assign content = '__DM_SP_GROUP__'
+    when 'selling_plan.price'
+      assign content = '__DM_SP_PRICE__'
+    when 'selling_plan.compare_at_price'
+      assign content = '__DM_SP_COMPARE__'
+    when 'selling_plan.discount_percentage'
+      assign content = '__DM_SP_SAVINGS_PCT__'
+    when 'selling_plan.discount_value'
+      assign content = '__DM_SP_SAVINGS_VAL__'
+    when 'variant.discount_percentage'
+      # Product-scoped: the selected variant's compare-at discount as "N%"
+      # (empty when not on sale). dm-dropmagic.js re-resolves it live.
+      if selected_variant != blank and selected_variant.compare_at_price > selected_variant.price
+        assign content = selected_variant.compare_at_price | minus: selected_variant.price | times: 100.0 | divided_by: selected_variant.compare_at_price | round | append: '%'
+      else
+        assign content = ''
+      endif
+    when 'variant.discount_value'
+      # Product-scoped: the selected variant's amount saved (compare-at − price).
+      if selected_variant != blank and selected_variant.compare_at_price > selected_variant.price
+        assign content = selected_variant.compare_at_price | minus: selected_variant.price | money
+      else
+        assign content = ''
+      endif
+    when 'cart.item_count'
+      # Count bubble — empty (hidden via [data-bind]:empty) when the cart is
+      # empty, so a fresh page with 0 items shows no "0" badge. dm-cart.js keeps
+      # this live on cart mutations.
+      if cart.item_count > 0
+        assign content = cart.item_count
+      else
+        assign content = ''
+      endif
+    when 'cart.total_price'
+      assign content = cart.total_price | money
+    when 'cart.original_total_price'
+      # Strike — empty (hidden) when the cart isn't discounted.
+      if cart.original_total_price > cart.total_price
+        assign content = cart.original_total_price | money
+      else
+        assign content = ''
+      endif
+    when 'cart.discount_value'
+      if cart.total_discount > 0
+        assign content = cart.total_discount | money
+      else
+        assign content = ''
+      endif
+    when 'cart.discount_title'
+      assign content = ''
+      assign c_disc = cart.cart_level_discount_applications | first
+      if c_disc
+        assign content = c_disc.title
+      endif
+    when 'cart.goal_remaining'
+      # Empty once the goal is reached (hidden via [data-bind]:empty).
+      assign content = dm_goal_remaining
+    when 'cart.goal_progress'
+      assign content = dm_goal_progress
+    when 'line.title'
+      assign content = '__DM_L_TITLE__'
+    when 'line.variant_title'
+      assign content = '__DM_L_VARIANT__'
+    when 'line.quantity'
+      assign content = '__DM_L_QTY__'
+    when 'line.final_price'
+      assign content = '__DM_L_UNIT__'
+    when 'line.line_price'
+      assign content = '__DM_L_LINE__'
+    when 'line.original_line_price'
+      assign content = '__DM_L_ORIG_LINE__'
+    when 'line.compare_at_price'
+      assign content = '__DM_L_COMPARE__'
+    when 'line.discount_value'
+      assign content = '__DM_L_DISCOUNT__'
+    when 'line.discount_percentage'
+      assign content = '__DM_L_DISCOUNT_PCT__'
+    when 'line.discount_title'
+      assign content = '__DM_L_DISCOUNT_TITLE__'
+    when 'line.selling_plan'
+      assign content = '__DM_L_PLAN__'
+  endcase
+-%}
+{%- comment -%}
+  Sub-text binds: a bound highlight span is baked into `content` by
+  shopify.ts as `<span data-bind="…">TOKEN</span>`. Resolve the product
+  tokens here (mirroring the whole-text `case` above); __DM_V_* variant
+  tokens are replaced where the picker/card assembles the item HTML, and
+  countdown.*/delivery.* carry no token (their runtime fills textContent).
+  Pre-escape each value into a var first — chaining `| escape` onto the
+  `replace` would escape the whole HTML string. Guarded so the common path
+  (no product sub-bind) does no work.
+{%- endcomment -%}
+{%- if content contains '__DM_P' -%}
+  {%- liquid
+    if selected_variant != blank
+      assign sub_price = selected_variant.price | money
+      if selected_variant.compare_at_price > selected_variant.price
+        assign sub_compare = selected_variant.compare_at_price | money
+      else
+        assign sub_compare = ''
+      endif
+    else
+      assign sub_price = p.price | money
+      if p.compare_at_price > p.price
+        assign sub_compare = p.compare_at_price | money
+      else
+        assign sub_compare = ''
+      endif
+    endif
+    assign sub_title = p.title | escape
+    assign sub_vendor = p.vendor | escape
+    assign sub_handle = p.handle | escape
+    assign sub_type = p.type | escape
+    assign sub_opt1 = ''
+    assign sub_opt2 = ''
+    assign sub_opt3 = ''
+    assign o1 = p.options_with_values[0]
+    assign o2 = p.options_with_values[1]
+    assign o3 = p.options_with_values[2]
+    if o1 != blank
+      assign sub_opt1 = o1.name | escape
+    endif
+    if o2 != blank
+      assign sub_opt2 = o2.name | escape
+    endif
+    if o3 != blank
+      assign sub_opt3 = o3.name | escape
+    endif
+    # Selected option VALUES (option_N.selected) — the initial variant's value
+    # per option; dm-dropmagic.js re-resolves live. Empty → :empty hides the span.
+    assign sub_opt1_sel = ''
+    assign sub_opt2_sel = ''
+    assign sub_opt3_sel = ''
+    if selected_variant != blank
+      if selected_variant.option1 != blank
+        assign sub_opt1_sel = selected_variant.option1 | escape
+      endif
+      if selected_variant.option2 != blank
+        assign sub_opt2_sel = selected_variant.option2 | escape
+      endif
+      if selected_variant.option3 != blank
+        assign sub_opt3_sel = selected_variant.option3 | escape
+      endif
+    endif
+    assign sub_discount_pct = ''
+    assign sub_discount_val = ''
+    if selected_variant != blank and selected_variant.compare_at_price > selected_variant.price
+      assign sub_discount_pct = selected_variant.compare_at_price | minus: selected_variant.price | times: 100.0 | divided_by: selected_variant.compare_at_price | round | append: '%'
+      assign sub_discount_val = selected_variant.compare_at_price | minus: selected_variant.price | money
+    endif
+    assign content = content | replace: '__DM_PID__', p.id
+    assign content = content | replace: '__DM_P_DISCOUNT_PCT__', sub_discount_pct
+    assign content = content | replace: '__DM_P_DISCOUNT_VAL__', sub_discount_val
+    assign content = content | replace: '__DM_P_TITLE__', sub_title
+    assign content = content | replace: '__DM_P_PRICE__', sub_price
+    assign content = content | replace: '__DM_P_COMPARE_AT__', sub_compare
+    assign content = content | replace: '__DM_P_VENDOR__', sub_vendor
+    assign content = content | replace: '__DM_P_HANDLE__', sub_handle
+    assign content = content | replace: '__DM_P_TYPE__', sub_type
+    assign content = content | replace: '__DM_P_DESCRIPTION__', p.description
+    assign content = content | replace: '__DM_P_OPT1__', sub_opt1
+    assign content = content | replace: '__DM_P_OPT2__', sub_opt2
+    assign content = content | replace: '__DM_P_OPT3__', sub_opt3
+    assign content = content | replace: '__DM_P_OPT1_SEL__', sub_opt1_sel
+    assign content = content | replace: '__DM_P_OPT2_SEL__', sub_opt2_sel
+    assign content = content | replace: '__DM_P_OPT3_SEL__', sub_opt3_sel
+  -%}
+{%- endif -%}
+{%- comment -%}
+  Cart-level sub-text spans (cart.*) resolve here from the `cart` global,
+  mirroring the __DM_P block. Per-line spans (__DM_L_*) are NOT resolved here —
+  they're replaced inside the `{% for item in cart.items %}` loop in
+  dm-cart-items.liquid, where the `item` is in scope.
+{%- endcomment -%}
+{%- if content contains '__DM_C' -%}
+  {%- liquid
+    assign sub_cart_count = cart.item_count
+    assign sub_cart_total = cart.total_price | money
+    # Strike + savings — empty when the cart isn't discounted (so :empty hides).
+    assign sub_cart_orig = ''
+    if cart.original_total_price > cart.total_price
+      assign sub_cart_orig = cart.original_total_price | money
+    endif
+    assign sub_cart_discount = ''
+    if cart.total_discount > 0
+      assign sub_cart_discount = cart.total_discount | money
+    endif
+    assign sub_cart_disc_title = ''
+    assign c_disc2 = cart.cart_level_discount_applications | first
+    if c_disc2
+      assign sub_cart_disc_title = c_disc2.title | escape
+    endif
+    assign content = content | replace: '__DM_C_COUNT__', sub_cart_count
+    assign content = content | replace: '__DM_C_TOTAL__', sub_cart_total
+    assign content = content | replace: '__DM_C_ORIG_TOTAL__', sub_cart_orig
+    assign content = content | replace: '__DM_C_DISCOUNT_TITLE__', sub_cart_disc_title
+    assign content = content | replace: '__DM_C_DISCOUNT__', sub_cart_discount
+    # Goal value binds — computed once in the top liquid block (dm_goal_*).
+    if content contains '__DM_C_GOAL'
+      assign dm_has_goal_token = true
+    endif
+    assign content = content | replace: '__DM_C_GOAL_REMAINING__', dm_goal_remaining
+    assign content = content | replace: '__DM_C_GOAL_PROGRESS__', dm_goal_progress
+  -%}
+{%- endif -%}
+{%- comment -%}
+  `data-dm-product-id` is emitted only when the bind needs JS-side scoping
+  to a specific product (price / compare_at_price update on variant-resolved).
+  Other product.* binds are SSR-only and don't need it.
+{%- endcomment -%}
+{%- assign needs_product_scope = false -%}
+{%- if bind == 'product.price' or bind == 'product.compare_at_price' or bind == 'variant.discount_percentage' or bind == 'variant.discount_value' or bind == 'option_1.selected' or bind == 'option_2.selected' or bind == 'option_3.selected' -%}
+  {%- assign needs_product_scope = true -%}
+{%- endif -%}
+{%- comment -%}
+  Whole-atom VISIBILITY gates (cart-goal): `cart.goal_reached` shows the atom
+  only once the goal is hit, `cart.goal_unreached` only below it. They inject no
+  value — they skip the whole element render when the state doesn't match (the
+  React mirror returns null in view mode). `dm_is_reached` is computed in the top
+  liquid block; re-evaluates on every dm-cart.js section refresh.
+{%- endcomment -%}
+{%- assign dm_gate_hide = false -%}
+{%- if bind == 'cart.goal_reached' and dm_is_reached == false -%}
+  {%- assign dm_gate_hide = true -%}
+{%- elsif bind == 'cart.goal_unreached' and dm_is_reached -%}
+  {%- assign dm_gate_hide = true -%}
+{%- endif -%}
+{%- comment -%}
+  A converted market has no comparable threshold (see the top liquid block), so
+  NOTHING driven by the goal renders there — both reward states, the value binds,
+  and the composed "$X away" copy. An unreached amount would print a shop-currency
+  number under a local-currency symbol, and a reached message would be untrue.
+  A store that cleared its threshold (`dm_goal_off`) hides the same set, for the
+  same reason: there is no reward to report either way.
+{%- endcomment -%}
+{%- if dm_goal_converted_away or dm_goal_off -%}
+  {%- if dm_has_goal_token -%}
+    {%- assign dm_gate_hide = true -%}
+  {%- elsif bind == 'cart.goal_reached' or bind == 'cart.goal_unreached' -%}
+    {%- assign dm_gate_hide = true -%}
+  {%- elsif bind == 'cart.goal_remaining' or bind == 'cart.goal_progress' -%}
+    {%- assign dm_gate_hide = true -%}
+  {%- endif -%}
+{%- endif -%}
+{%- comment -%}
+  Gradient text mirror: a gradient can't live in `color:`, so when the color
+  slot holds a `linear|radial-gradient(…)` value, route it to `--dm-text-gradient`
+  and gate the clip/transparent scaffolding via `data-text-gradient` (see
+  `[data-text-gradient]` in dm-theme.css). Solid values keep `--dm-text-color`.
+{%- endcomment -%}
+{%- assign is_text_gradient = false -%}
+{%- if color contains 'gradient' -%}
+  {%- assign is_text_gradient = true -%}
+{%- endif -%}
+{%- capture text_inline -%}
+  {%- if is_text_gradient -%}--dm-text-gradient: {{ color }}; {%- elsif color != blank -%}--dm-text-color: {{ color }}; {%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ text_inline }}{{ custom_styles_inline }}{%- endcapture -%}
+{%- unless dm_gate_hide -%}
+<{{ tag }}
+  data-atom-type="text"
+  {% if is_text_gradient %}data-text-gradient{% endif %}
+  {% if bind != blank %}data-bind="{{ bind }}"{% endif %}
+  {% if needs_product_scope and p != blank %}data-dm-product-id="{{ p.id }}"{% endif %}
+  {% if type != blank %}data-text-type="{{ type }}"{% endif %}
+  {% if tag != blank %}data-text-tag="{{ tag }}"{% endif %}
+  {% if align != blank %}data-text-align="{{ align }}"{% endif %}
+  {% if align_sm != blank %}data-text-align-sm="{{ align_sm }}"{% endif %}
+  {% if size != blank %}data-text-size="{{ size }}"{% endif %}
+  {% if size_sm != blank %}data-text-size-sm="{{ size_sm }}"{% endif %}
+  {% if weight != blank %}data-text-weight="{{ weight }}"{% endif %}
+  {% if weight_sm != blank %}data-text-weight-sm="{{ weight_sm }}"{% endif %}
+  {% if decoration != blank %}data-text-decoration="{{ decoration }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>{{- content -}}</{{ tag }}>
+{%- endunless -%}

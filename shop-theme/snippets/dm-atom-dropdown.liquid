@@ -1,0 +1,350 @@
+{%- comment -%}
+  Shared markup for the `dropdown` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-dropdown.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  DM Dropdown — storefront mirror of the Dropdown atom.
+
+  Renders a button trigger + ul menu. The button label shows a clone of
+  the active item's slot content; the menu contains one li per option
+  value. Each item carries data-active + check icon (hidden until active).
+
+  Reuses the captured-template + placeholder-replace trick from
+  dm-option-picker.liquid:
+    __DM_V_VALUE__         option value name ("Red", "L")
+    __DM_V_OPTION_NAME__   option name from the product ("Color")
+    __DM_V_PRODUCT_ID__    product id
+    __DM_V_ACTIVE__        "true" / "false" — set on the variant initially
+                           matching the storefront's selected variant
+    __DM_V_TITLE__         full variant title ("Red / L")
+    __DM_V_PRICE__         money-formatted price
+    __DM_V_COMPARE_AT__    money-formatted compare-at-price (or empty)
+    __DM_V_IMAGE_SRC__     featured image URL (or empty)
+
+  Click handling is centralized in dm-dropdown.js (open/close +
+  item click → flip data-active + emit dm:option-selected → syncVariants).
+{%- endcomment -%}
+
+{%- assign p = closest.product | default: product -%}
+
+{%- capture trigger_inline -%}
+  {%- if bg != blank -%}--dm-input: {{ bg }}; {%- endif -%}
+  {%- if color != blank -%}--dm-input-foreground: {{ color }}; {%- endif -%}
+  {%- if border_color != blank -%}--dm-dropdown-border-color: {{ border_color }}; {%- endif -%}
+  {%- if border_width != blank -%}--dm-dropdown-border-width: {{ border_width }}; {%- endif -%}
+  {%- if radius != blank -%}--dm-dropdown-radius: {{ radius }}; {%- endif -%}
+{%- endcapture -%}
+
+{%- comment -%}
+  Capture the item template once at the top — Shopify allows only one
+  `content_for 'blocks'` per template. Reuse for the trigger label clone
+  + the per-value menu items.
+{%- endcomment -%}
+
+
+{%- comment -%}
+  Hardcoded structural icons (mirror render.tsx's TriggerChevron /
+  SelectedCheck). Phosphor caret-up-down + check. Not exposed via the
+  schema — they're dropdown chrome, not merchant content.
+{%- endcomment -%}
+{%- capture trigger_chevron -%}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true" data-dropdown-trigger-icon><path fill="currentColor" d="M181.66 170.34a8 8 0 0 1 0 11.32l-48 48a8 8 0 0 1-11.32 0l-48-48a8 8 0 0 1 11.32-11.32L128 212.69l42.34-42.35a8 8 0 0 1 11.32 0Zm-96-84.68L128 43.31l42.34 42.35a8 8 0 0 0 11.32-11.32l-48-48a8 8 0 0 0-11.32 0l-48 48a8 8 0 0 0 11.32 11.32Z"/></svg>{%- endcapture -%}
+{%- capture selected_check -%}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true" data-dropdown-item-indicator><path fill="currentColor" d="M229.66 77.66l-128 128a8 8 0 0 1-11.32 0l-56-56a8 8 0 0 1 11.32-11.32L96 188.69 218.34 66.34a8 8 0 0 1 11.32 11.32Z"/></svg>{%- endcapture -%}
+
+{%- if source == 'selling_plan' -%}
+  {%- comment -%}
+    Selling-plan source — the frequency dropdown inside a subscribe card.
+    Lists the product's first selling-plan group's plans (single-group is the
+    common case; multi-group anchor resolution is a follow-up). Each item
+    carries data-selling-plan-id; dm-dropdown.js emits dm.setSellingPlan +
+    activates the parent subscribe card. __DM_SP_* placeholders are replaced
+    with each plan's price for the default variant (runtime re-syncs).
+  {%- endcomment -%}
+  {%- assign sp_group = p.selling_plan_groups.first -%}
+  {%- assign sp_variant = p.selected_or_first_available_variant -%}
+  <dm-dropdown data-atom-type="dropdown" data-dropdown-source="selling_plan"
+    {% if p != blank %}data-dm-product-id="{{ p.id }}"{% endif %}
+    {% if size != blank %}data-size="{{ size }}"{% endif %}
+    {% if size_sm != blank %}data-size-sm="{{ size_sm }}"{% endif %}
+    {% if trigger_inline != blank %}style="{{ trigger_inline }}"{% endif %}
+    {{ shopify_attributes }}
+  >
+    {%- if p == blank or sp_group == blank -%}
+      <button data-dropdown-trigger type="button" data-state="closed">
+        <span data-dropdown-trigger-label>{{ item_template }}</span>
+        {{ trigger_chevron }}
+      </button>
+    {%- else -%}
+      {%- liquid
+        assign sp_first = sp_group.selling_plans.first
+        assign t_price = ''
+        assign t_compare = ''
+        assign t_savings = ''
+        assign t_savings_pct = ''
+        for a in sp_variant.selling_plan_allocations
+          assign aid = a.selling_plan.id | append: ''
+          assign fid = sp_first.id | append: ''
+          if aid == fid
+            assign t_price = a.price | money
+            assign t_compare = sp_variant.price | money
+            assign t_saved = sp_variant.price | minus: a.price
+            if t_saved > 0
+              assign t_savings = t_saved | money
+              assign t_savings_pct = t_saved | times: 100.0 | divided_by: sp_variant.price | round | append: '%'
+            endif
+            break
+          endif
+        endfor
+        assign trigger_html = item_template
+        assign trigger_html = trigger_html | replace: '__DM_SP_NAME__', sp_first.name | replace: '__DM_SP_GROUP__', sp_group.name | replace: '__DM_SP_PRICE__', t_price | replace: '__DM_SP_COMPARE__', t_compare | replace: '__DM_SP_SAVINGS_VAL__', t_savings | replace: '__DM_SP_SAVINGS_PCT__', t_savings_pct
+      -%}
+      <button data-dropdown-trigger type="button" data-state="closed">
+        <span data-dropdown-trigger-label>{{ trigger_html }}</span>
+        {{ trigger_chevron }}
+      </button>
+      <ul data-dropdown-menu data-state="closed" role="listbox">
+        {%- for pl in sp_group.selling_plans -%}
+          {%- liquid
+            assign is_active = 'false'
+            if forloop.first
+              assign is_active = 'true'
+            endif
+            assign i_price = ''
+            assign i_compare = ''
+            assign i_savings = ''
+            assign i_savings_pct = ''
+            for a in sp_variant.selling_plan_allocations
+              assign aid = a.selling_plan.id | append: ''
+              assign pid = pl.id | append: ''
+              if aid == pid
+                assign i_price = a.price | money
+                assign i_compare = sp_variant.price | money
+                assign i_saved = sp_variant.price | minus: a.price
+                if i_saved > 0
+                  assign i_savings = i_saved | money
+                  assign i_savings_pct = i_saved | times: 100.0 | divided_by: sp_variant.price | round | append: '%'
+                endif
+                break
+              endif
+            endfor
+            assign item_html = item_template
+            assign item_html = item_html | replace: '__DM_SP_NAME__', pl.name | replace: '__DM_SP_GROUP__', sp_group.name | replace: '__DM_SP_PRICE__', i_price | replace: '__DM_SP_COMPARE__', i_compare | replace: '__DM_SP_SAVINGS_VAL__', i_savings | replace: '__DM_SP_SAVINGS_PCT__', i_savings_pct
+          -%}
+          <li
+            data-dropdown-item
+            data-selling-plan-id="{{ pl.id }}"
+            data-active="{{ is_active }}"
+            role="option"
+            aria-selected="{{ is_active }}"
+          >
+            <span data-dropdown-item-content>{{ item_html }}</span>
+            {{ selected_check }}
+          </li>
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+  </dm-dropdown>
+{%- elsif p == blank -%}
+  {%- comment -%}
+    No product context — render the authored template once inside the
+    trigger so the merchant can preview composition on non-product pages.
+    Click handler no-ops without `data-dm-product-id`.
+
+    There is no variant to resolve the `__DM_V_*` tokens against here, and a
+    dead token must render as empty rather than as `__DM_V_PRICE__` on a live
+    storefront — same rule as dm-atom-option-picker.liquid's `item_fallback`.
+  {%- endcomment -%}
+  {%- liquid
+    assign trigger_fallback = item_template
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_VALUE__', ''
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_OPTION_NAME__', ''
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_PRODUCT_ID__', ''
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_ACTIVE__', 'false'
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_AVAILABLE__', 'false'
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_TITLE__', ''
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_PRICE__', ''
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_COMPARE_AT__', ''
+    assign trigger_fallback = trigger_fallback | replace: '__DM_V_IMAGE_SRC__', ''
+  -%}
+  <dm-dropdown data-atom-type="dropdown"
+    {% if size != blank %}data-size="{{ size }}"{% endif %}
+    {% if size_sm != blank %}data-size-sm="{{ size_sm }}"{% endif %}
+    {% if trigger_inline != blank %}style="{{ trigger_inline }}"{% endif %}
+    {{ shopify_attributes }}
+  >
+    <button data-dropdown-trigger type="button" data-state="closed">
+      <span data-dropdown-trigger-label>{{ trigger_fallback }}</span>
+      {{ trigger_chevron }}
+    </button>
+  </dm-dropdown>
+{%- else -%}
+  {%- liquid
+    assign option_key = option | default: 'option_1'
+    assign option_idx = 0
+    if option_key == 'option_2'
+      assign option_idx = 1
+    elsif option_key == 'option_3'
+      assign option_idx = 2
+    endif
+    assign option = p.options_with_values[option_idx]
+  -%}
+
+  <dm-dropdown data-atom-type="dropdown"
+    data-dm-product-id="{{ p.id }}"
+    {% if option != blank %}data-option-name="{{ option.name | escape }}"{% endif %}
+    {% if size != blank %}data-size="{{ size }}"{% endif %}
+    {% if size_sm != blank %}data-size-sm="{{ size_sm }}"{% endif %}
+    {% if trigger_inline != blank %}style="{{ trigger_inline }}"{% endif %}
+    {{ shopify_attributes }}
+  >
+    {%- if option == blank -%}
+      {%- comment -%}Selected option doesn't exist on this product.{%- endcomment -%}
+    {%- else -%}
+      {%- liquid
+        assign selected_value = option.selected_value
+
+        # Resolve the variant that matches the selected_value for the trigger
+        # label clone. Mirrors VariantPicker's "first variant matching this
+        # value" lookup — runtime cross-option resolution stays accurate
+        # via syncVariants reading product JSON.
+        assign trigger_variant = nil
+        for v in p.variants
+          if option_idx == 0 and v.option1 == selected_value
+            assign trigger_variant = v
+            break
+          elsif option_idx == 1 and v.option2 == selected_value
+            assign trigger_variant = v
+            break
+          elsif option_idx == 2 and v.option3 == selected_value
+            assign trigger_variant = v
+            break
+          endif
+        endfor
+
+        assign trigger_price = ''
+        assign trigger_compare = ''
+        assign trigger_image = ''
+        assign trigger_title = selected_value
+        if trigger_variant != nil
+          assign trigger_price = trigger_variant.price | money
+          if trigger_variant.compare_at_price > trigger_variant.price
+            assign trigger_compare = trigger_variant.compare_at_price | money
+          endif
+          if trigger_variant.featured_media != nil
+            assign trigger_image = trigger_variant.featured_media | img_url: '600x'
+          endif
+          assign trigger_title = trigger_variant.title
+        endif
+
+        assign trigger_html = item_template
+        assign trigger_html = trigger_html | replace: '__DM_V_VALUE__', selected_value
+        assign trigger_html = trigger_html | replace: '__DM_V_OPTION_NAME__', option.name
+        assign trigger_html = trigger_html | replace: '__DM_V_PRODUCT_ID__', p.id
+        assign trigger_html = trigger_html | replace: '__DM_V_ACTIVE__', 'true'
+        assign trigger_html = trigger_html | replace: '__DM_V_AVAILABLE__', 'true'
+        assign trigger_html = trigger_html | replace: '__DM_V_TITLE__', trigger_title
+        assign trigger_html = trigger_html | replace: '__DM_V_PRICE__', trigger_price
+        assign trigger_html = trigger_html | replace: '__DM_V_COMPARE_AT__', trigger_compare
+        assign trigger_html = trigger_html | replace: '__DM_V_IMAGE_SRC__', trigger_image
+      -%}
+
+      <button data-dropdown-trigger type="button" data-state="closed">
+        <span data-dropdown-trigger-label>{{ trigger_html }}</span>
+        {{ trigger_chevron }}
+      </button>
+
+      <ul data-dropdown-menu data-state="closed" role="listbox">
+        {%- for value in option.values -%}
+          {%- liquid
+            assign matching_variant = nil
+            for v in p.variants
+              if option_idx == 0 and v.option1 == value
+                assign matching_variant = v
+                break
+              elsif option_idx == 1 and v.option2 == value
+                assign matching_variant = v
+                break
+              elsif option_idx == 2 and v.option3 == value
+                assign matching_variant = v
+                break
+              endif
+            endfor
+
+            assign is_active = 'false'
+            if selected_value == value
+              assign is_active = 'true'
+            endif
+
+            # Available when ANY variant at this option-value is in stock.
+            assign is_available = 'false'
+            for v in p.variants
+              if option_idx == 0 and v.option1 == value and v.available
+                assign is_available = 'true'
+                break
+              elsif option_idx == 1 and v.option2 == value and v.available
+                assign is_available = 'true'
+                break
+              elsif option_idx == 2 and v.option3 == value and v.available
+                assign is_available = 'true'
+                break
+              endif
+            endfor
+
+            assign price_str = ''
+            assign compare_str = ''
+            assign image_src = ''
+            assign variant_title = value
+            if matching_variant != nil
+              assign price_str = matching_variant.price | money
+              if matching_variant.compare_at_price > matching_variant.price
+                assign compare_str = matching_variant.compare_at_price | money
+              endif
+              if matching_variant.featured_media != nil
+                assign image_src = matching_variant.featured_media | img_url: '600x'
+              endif
+              assign variant_title = matching_variant.title
+            endif
+
+            assign item_html = item_template
+            assign item_html = item_html | replace: '__DM_V_VALUE__', value
+            assign item_html = item_html | replace: '__DM_V_OPTION_NAME__', option.name
+            assign item_html = item_html | replace: '__DM_V_PRODUCT_ID__', p.id
+            assign item_html = item_html | replace: '__DM_V_ACTIVE__', is_active
+            assign item_html = item_html | replace: '__DM_V_AVAILABLE__', is_available
+            assign item_html = item_html | replace: '__DM_V_TITLE__', variant_title
+            assign item_html = item_html | replace: '__DM_V_PRICE__', price_str
+            assign item_html = item_html | replace: '__DM_V_COMPARE_AT__', compare_str
+            assign item_html = item_html | replace: '__DM_V_IMAGE_SRC__', image_src
+          -%}
+          <li
+            data-dropdown-item
+            data-variant-value="{{ value | escape }}"
+            data-variant-option-name="{{ option.name | escape }}"
+            data-dm-product-id="{{ p.id }}"
+            data-active="{{ is_active }}"
+            role="option"
+            aria-selected="{{ is_active }}"
+          >
+            <span data-dropdown-item-content>{{ item_html }}</span>
+            {{ selected_check }}
+          </li>
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+  </dm-dropdown>
+{%- endif -%}

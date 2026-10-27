@@ -1,0 +1,65 @@
+{%- comment -%}
+  Shared markup for the `selling-plan-picker` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-selling-plan-picker.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  DM Selling Plan Picker — storefront mirror.
+
+  Manual mode (the molecules): the authored child Cards render as-is; each
+  bound Card self-stamps its selection attrs (`data-selling-plan-id` /
+  `data-one-time`) + replaces its `__DM_SP_*` placeholders via dm-card.liquid.
+  This wrapper just provides the flex container + `data-dm-product-id`.
+  dm-selling-plan-picker.js handles clicks → `dm.setSellingPlan`;
+  dm-dropmagic.js' syncVariants fills/re-prices plan cards on variant change.
+
+  Clone mode (cards-per-frequency) storefront multiplication is a follow-up —
+  for now the authored template renders once. The manual subscribe/one-time
+  molecules are the supported publish path.
+{%- endcomment -%}
+{%- assign p = closest.product | default: product -%}
+
+{%- capture outer_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-selling-plan-picker data-atom-type="selling-plan-picker"
+  {% if p != blank %}data-dm-product-id="{{ p.id }}"{% endif %}
+  {% if direction != blank %}data-flex-direction="{{ direction }}"{% endif %}
+  {% if direction_sm != blank %}data-flex-direction-sm="{{ direction_sm }}"{% endif %}
+  {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+  {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+  {% if align != blank %}data-flex-align="{{ align }}"{% endif %}
+  {% if align_sm != blank %}data-flex-align-sm="{{ align_sm }}"{% endif %}
+  {% if justify != blank %}data-flex-justify="{{ justify }}"{% endif %}
+  {% if justify_sm != blank %}data-flex-justify-sm="{{ justify_sm }}"{% endif %}
+  {% if wrap != blank %}data-flex-wrap="{{ wrap }}"{% endif %}
+  {% if wrap_sm != blank %}data-flex-wrap-sm="{{ wrap_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if outer_inline != blank %}style="{{ outer_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {%- if p == blank or p.selling_plan_groups.size == 0 -%}
+    {%- comment -%}
+      No subscription app / selling plans on this product — render NOTHING so a
+      published store never shows plan cards bound to plan ids that don't exist
+      (they would stale out to empty/broken cards). The merchant installs a
+      subscription app (guidance lives in the builder); the block lights up
+      automatically once plans exist — no re-publish needed.
+    {%- endcomment -%}
+  {%- else -%}
+    {{ children }}
+  {%- endif -%}
+</dm-selling-plan-picker>

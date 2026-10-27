@@ -1,0 +1,570 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "hero": {
+      "type": "rich-text",
+      "blocks": {
+        "caption_1": {
+          "type": "caption",
+          "settings": {
+            "caption": "Elektricien uit de regio",
+            "text_style": "caption-with-letter-spacing",
+            "text_size": "medium"
+          }
+        },
+        "heading_2": {
+          "type": "heading",
+          "settings": {
+            "heading": "Verlicht je huis met AWM.",
+            "heading_size": "hxl"
+          }
+        },
+        "text_3": {
+          "type": "text",
+          "settings": {
+            "text": "<p>Van stopcontact tot zonnepanelen: AWM Elektrotechniek ontwerpt, installeert en keurt jouw elektrische installatie – netjes, veilig en op tijd.</p>"
+          }
+        },
+        "button_4": {
+          "type": "button",
+          "settings": {
+            "button_label": "Gratis offerte aanvragen",
+            "button_link": "shopify://pages/contact",
+            "button_style_secondary": false,
+            "button_label_2": "Mail ons",
+            "button_link_2": "mailto:info@awm-elektrotechniek.nl",
+            "button_style_secondary_2": true
+          }
+        }
+      },
+      "block_order": [
+        "caption_1",
+        "heading_2",
+        "text_3",
+        "button_4"
+      ],
+      "settings": {
+        "desktop_content_position": "center",
+        "content_alignment": "center",
+        "color_scheme": "scheme-3",
+        "full_width": true,
+        "padding_top": 96,
+        "padding_bottom": 96
+      }
+    },
+    "trust": {
+      "type": "multicolumn",
+      "blocks": {
+        "column_1": {
+          "type": "column",
+          "settings": {
+            "icon": "sell",
+            "title": "Vaste prijs vooraf",
+            "text": "<p>Een duidelijke offerte met vaste prijs, zodat je nooit voor verrassingen staat.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_2": {
+          "type": "column",
+          "settings": {
+            "icon": "event_available",
+            "title": "Snel ingepland",
+            "text": "<p>We reageren meestal binnen 24 uur en plannen je klus snel in.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_3": {
+          "type": "column",
+          "settings": {
+            "icon": "cleaning_services",
+            "title": "Netjes opgeleverd",
+            "text": "<p>We werken netjes en laten alles opgeruimd achter.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "column_1",
+        "column_2",
+        "column_3"
+      ],
+      "settings": {
+        "title": "",
+        "heading_size": "h1",
+        "image_width": "full",
+        "image_ratio": "adapt",
+        "columns_desktop": 3,
+        "column_alignment": "center",
+        "background_style": "none",
+        "button_label": "",
+        "button_link": "",
+        "color_scheme": "",
+        "columns_mobile": "1",
+        "swipe_on_mobile": false,
+        "padding_top": 56,
+        "padding_bottom": 40
+      }
+    },
+    "diensten": {
+      "type": "multicolumn",
+      "blocks": {
+        "column_1": {
+          "type": "column",
+          "settings": {
+            "icon": "electrical_services",
+            "title": "Elektrische installaties",
+            "text": "<p>Nieuwbouw, uitbreiding en verbouwing: bekabeling, stopcontacten, verlichting en aansluitingen volgens NEN 1010.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_2": {
+          "type": "column",
+          "settings": {
+            "icon": "home_repair_service",
+            "title": "Renovatie & groepenkast",
+            "text": "<p>Oude bedrading en groepenkasten vervangen of uitbreiden – veilig, modern en met zo min mogelijk overlast.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_3": {
+          "type": "column",
+          "settings": {
+            "icon": "wifi",
+            "title": "Domotica & smart home",
+            "text": "<p>Verlichting, verwarming, zonwering en beveiliging eenvoudig bedienen via app of spraak.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_4": {
+          "type": "column",
+          "settings": {
+            "icon": "solar_power",
+            "title": "Zonnepanelen & thuisbatterij",
+            "text": "<p>Zelf stroom opwekken en opslaan – van advies tot aansluiting op het net.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_5": {
+          "type": "column",
+          "settings": {
+            "icon": "ev_station",
+            "title": "Laadpaal",
+            "text": "<p>Een laadpaal voor je elektrische auto, thuis of bij je bedrijf – inclusief advies over de juiste aansluiting.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_6": {
+          "type": "column",
+          "settings": {
+            "icon": "fact_check",
+            "title": "Keuring & storingen",
+            "text": "<p>Inspectie van installaties (NEN 3140) en snelle hulp bij storingen, zodat alles veilig blijft werken.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "column_1",
+        "column_2",
+        "column_3",
+        "column_4",
+        "column_5",
+        "column_6"
+      ],
+      "settings": {
+        "title": "Alles voor jouw elektra",
+        "heading_size": "h1",
+        "image_width": "full",
+        "image_ratio": "adapt",
+        "columns_desktop": 3,
+        "column_alignment": "center",
+        "background_style": "none",
+        "button_label": "",
+        "button_link": "",
+        "color_scheme": "scheme-2",
+        "columns_mobile": "1",
+        "swipe_on_mobile": false,
+        "padding_top": 64,
+        "padding_bottom": 64
+      }
+    },
+    "werkwijze": {
+      "type": "multicolumn",
+      "blocks": {
+        "column_1": {
+          "type": "column",
+          "settings": {
+            "icon": "call",
+            "title": "1. Aanvraag",
+            "text": "<p>Bel ons of stuur een kort bericht over wat je nodig hebt.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_2": {
+          "type": "column",
+          "settings": {
+            "icon": "request_quote",
+            "title": "2. Bezoek & offerte",
+            "text": "<p>We bekijken alles ter plekke en sturen je een duidelijke offerte met vaste prijs.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "column_3": {
+          "type": "column",
+          "settings": {
+            "icon": "construction",
+            "title": "3. Uitvoering",
+            "text": "<p>We werken netjes en op tijd, en laten alles opgeruimd achter.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "column_1",
+        "column_2",
+        "column_3"
+      ],
+      "settings": {
+        "title": "In 3 stappen naar nieuwe elektra",
+        "heading_size": "h1",
+        "image_width": "full",
+        "image_ratio": "adapt",
+        "columns_desktop": 3,
+        "column_alignment": "center",
+        "background_style": "none",
+        "button_label": "",
+        "button_link": "",
+        "color_scheme": "",
+        "columns_mobile": "1",
+        "swipe_on_mobile": false,
+        "padding_top": 64,
+        "padding_bottom": 64
+      }
+    },
+    "over_ons": {
+      "type": "rich-text",
+      "blocks": {
+        "caption_1": {
+          "type": "caption",
+          "settings": {
+            "caption": "Over ons",
+            "text_style": "caption-with-letter-spacing",
+            "text_size": "medium"
+          }
+        },
+        "heading_2": {
+          "type": "heading",
+          "settings": {
+            "heading": "Jouw elektricien uit de regio",
+            "heading_size": "h1"
+          }
+        },
+        "text_3": {
+          "type": "text",
+          "settings": {
+            "text": "<p>AWM Elektrotechniek staat voor betrouwbaar elektrawerk voor particulieren, verhuurders en bedrijven. We werken volgens NEN 1010 en NEN 3140, met een vast aanspreekpunt en duidelijke communicatie.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "caption_1",
+        "heading_2",
+        "text_3"
+      ],
+      "settings": {
+        "desktop_content_position": "center",
+        "content_alignment": "center",
+        "color_scheme": "scheme-2",
+        "full_width": true,
+        "padding_top": 64,
+        "padding_bottom": 64
+      }
+    },
+    "webshop_heading": {
+      "type": "rich-text",
+      "blocks": {
+        "heading_GiEajR": {
+          "type": "heading",
+          "settings": {
+            "heading": "Webshop",
+            "heading_size": "h1"
+          }
+        }
+      },
+      "block_order": [
+        "heading_GiEajR"
+      ],
+      "settings": {
+        "desktop_content_position": "center",
+        "content_alignment": "center",
+        "color_scheme": "",
+        "full_width": true,
+        "padding_top": 32,
+        "padding_bottom": 32
+      }
+    },
+    "featured_collection": {
+      "type": "featured-collection",
+      "settings": {}
+    },
+    "contact_cta": {
+      "type": "rich-text",
+      "blocks": {
+        "heading_1": {
+          "type": "heading",
+          "settings": {
+            "heading": "Offerte aanvragen",
+            "heading_size": "h1"
+          }
+        },
+        "text_2": {
+          "type": "text",
+          "settings": {
+            "text": "<p>Laat ons kort weten waar het om gaat – we reageren meestal binnen 24 uur. E-mail: <a href=\"mailto:info@awm-elektrotechniek.nl\">info@awm-elektrotechniek.nl</a></p>"
+          }
+        },
+        "button_3": {
+          "type": "button",
+          "settings": {
+            "button_label": "Naar het contactformulier",
+            "button_link": "shopify://pages/contact",
+            "button_style_secondary": false,
+            "button_label_2": "",
+            "button_link_2": "",
+            "button_style_secondary_2": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_1",
+        "text_2",
+        "button_3"
+      ],
+      "settings": {
+        "desktop_content_position": "center",
+        "content_alignment": "center",
+        "color_scheme": "scheme-3",
+        "full_width": true,
+        "padding_top": 72,
+        "padding_bottom": 72
+      }
+    },
+    "testimonials_dngRaR": {
+      "type": "testimonials",
+      "blocks": {
+        "column_YgYXe4": {
+          "type": "column",
+          "settings": {
+            "title": "Amazing Products!",
+            "text": "<p>“Amazing products at amazing products, just like they say! Never been disappointed when buying from them\"</p>",
+            "image_pos": "below_description",
+            "author": "<em><strong>Ronan C.</strong></em>"
+          }
+        },
+        "column_4P8QAn": {
+          "type": "column",
+          "settings": {
+            "title": "Quality Was Perfect",
+            "text": "<p>\"I was surprised with how good the quality was, there’s so many home must-haves that I want. Literally the hardest part is choosing!\"</p>",
+            "image_pos": "below_description",
+            "author": "<em><strong>Jane K. </strong></em>"
+          }
+        },
+        "column_hUznym": {
+          "type": "column",
+          "settings": {
+            "title": "Shipping was Fast!",
+            "text": "<p>\"I love shopping the Trending Items, so many cool products I’ve never seen before, wish I could have them all\"</p>",
+            "image_pos": "below_description",
+            "author": "<em><strong>Anne L.</strong></em>"
+          }
+        }
+      },
+      "block_order": [
+        "column_YgYXe4",
+        "column_4P8QAn",
+        "column_hUznym"
+      ],
+      "settings": {
+        "title": "Testimonials",
+        "testimonials_per_row": 3,
+        "gap": 20,
+        "show_stars": true,
+        "stars_color": "#ffd700",
+        "background_color": "#eeeef6",
+        "show_quotes": true,
+        "padding_top": 56,
+        "padding_bottom": 68
+      },
+      "disabled": true
+    },
+    "image_with_text_WVC6Ch": {
+      "type": "image-with-text",
+      "blocks": {
+        "heading_iT36HQ": {
+          "type": "heading",
+          "settings": {
+            "heading": "Our Story",
+            "heading_size": "h1"
+          }
+        },
+        "text_Uf3Pmz": {
+          "type": "text",
+          "settings": {
+            "text": "<p>We believe in enhancing your everyday experiences by providing you with a curated selection of high-quality products that cater to various aspects of your life. Established with a passion for delivering convenience, style, and innovation, we have become your go-to destination for all your everyday needs.</p>",
+            "text_style": "body"
+          }
+        }
+      },
+      "block_order": [
+        "heading_iT36HQ",
+        "text_Uf3Pmz"
+      ],
+      "disabled": true,
+      "settings": {
+        "height": "adapt",
+        "desktop_image_width": "small",
+        "layout": "text_first",
+        "desktop_content_position": "middle",
+        "desktop_content_alignment": "center",
+        "content_layout": "overlap",
+        "section_color_scheme": "",
+        "color_scheme": "scheme-3",
+        "image_behavior": "none",
+        "mobile_content_alignment": "left",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "featured_product_DUEQK8": {
+      "type": "featured-product",
+      "blocks": {
+        "text_4KwP7d": {
+          "type": "text",
+          "settings": {
+            "text": "<strong>FEATURED PRODUCT</strong>",
+            "text_style": "subtitle"
+          }
+        },
+        "title_Bw8Y3F": {
+          "type": "title",
+          "settings": {
+            "heading_size": "h1"
+          }
+        },
+        "price_XxgkPR": {
+          "type": "price",
+          "settings": {}
+        },
+        "variant_picker_DFPCY8": {
+          "type": "variant_picker",
+          "settings": {
+            "picker_type": "button",
+            "swatch_shape": "circle"
+          }
+        },
+        "quantity_selector_CHEANa": {
+          "type": "quantity_selector",
+          "settings": {}
+        },
+        "buy_buttons_jCqKGB": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_dynamic_checkout": true,
+            "show_gift_card_recipient": true
+          }
+        }
+      },
+      "block_order": [
+        "text_4KwP7d",
+        "title_Bw8Y3F",
+        "price_XxgkPR",
+        "variant_picker_DFPCY8",
+        "quantity_selector_CHEANa",
+        "buy_buttons_jCqKGB"
+      ],
+      "disabled": true,
+      "settings": {
+        "product": "",
+        "color_scheme": "scheme-1",
+        "secondary_background": false,
+        "media_size": "small",
+        "constrain_to_viewport": true,
+        "media_position": "left",
+        "image_zoom": "lightbox",
+        "hide_variants": false,
+        "enable_video_looping": false,
+        "padding_top": 32,
+        "padding_bottom": 20
+      }
+    },
+    "newsletter_94GBg4": {
+      "type": "newsletter",
+      "blocks": {
+        "heading_fYpHbj": {
+          "type": "heading",
+          "settings": {
+            "heading": "Blijf op de hoogte",
+            "heading_size": "h1"
+          }
+        },
+        "paragraph_QbpEP8": {
+          "type": "paragraph",
+          "settings": {
+            "text": "<p>Tips over veilige elektra, zonnepanelen en laadpalen – af en toe in je inbox.</p>"
+          }
+        },
+        "email_form_LnhkKf": {
+          "type": "email_form",
+          "settings": {}
+        }
+      },
+      "block_order": [
+        "heading_fYpHbj",
+        "paragraph_QbpEP8",
+        "email_form_LnhkKf"
+      ],
+      "settings": {
+        "color_scheme": "scheme-1",
+        "full_width": true,
+        "padding_top": 76,
+        "padding_bottom": 88
+      },
+      "disabled": true
+    }
+  },
+  "order": [
+    "hero",
+    "trust",
+    "diensten",
+    "werkwijze",
+    "over_ons",
+    "webshop_heading",
+    "featured_collection",
+    "contact_cta",
+    "testimonials_dngRaR",
+    "image_with_text_WVC6Ch",
+    "featured_product_DUEQK8",
+    "newsletter_94GBg4"
+  ]
+}

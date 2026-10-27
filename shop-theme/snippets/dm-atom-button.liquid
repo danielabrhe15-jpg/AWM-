@@ -1,0 +1,85 @@
+{%- comment -%}
+  Shared markup for the `button` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-button.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- liquid
+  assign p = closest.product | default: product
+-%}
+{%- capture href -%}{%- render 'dm-resolve-link', link: href -%}{%- endcapture -%}
+{%- liquid
+  # `bind` (dynamic current-product URL) overrides the static smart-link —
+  # but ONLY when a product is actually in scope. On a non-product template
+  # (home, landing) nothing declares one: `closest.product` resolves off a
+  # section's own `product` setting, which only a product-context Section
+  # sets, and the `product` global exists on product templates alone. `p` is
+  # then nil and `p.url` is blank, so this used to assign an EMPTY href —
+  # `<a href="">` re-navigates to the current page, turning the CTA into a
+  # silent self-link. The merchant cannot repair it either: the Inspector
+  # disables the Link row while a bind is set. Fall through to the static
+  # smart-link instead (`dm-resolve-link` already floors that at `#`).
+  case bind
+    when 'product.url'
+      if p.url != blank
+        assign href = p.url
+      endif
+  endcase
+  # add-to-cart buttons never navigate via href — the click delegation in
+  # dm-dropmagic.js preventDefaults, POSTs /cart/add.js with the product's
+  # current purchase state, then opens the cart.
+  if action == 'add-to-cart'
+    assign href = '#'
+  endif
+-%}
+{%- capture button_inline -%}
+  {%- comment -%}
+    `bg` needs no gradient branch: it is a CSS background VALUE, and the variant
+    rules consume it with the `background` shorthand, which takes a color or a
+    `linear-gradient(…)` alike. One slot, either value.
+  {%- endcomment -%}
+  {%- if bg != blank -%}--dm-button-bg: {{ bg }}; {%- endif -%}
+  {%- if color != blank -%}--dm-button-color: {{ color }}; {%- endif -%}
+  {%- if radius != blank -%}--dm-button-radius: {{ radius }}; {%- endif -%}
+  {%- if border_width != blank -%}--dm-button-border-width: {{ border_width }}; {%- endif -%}
+  {%- if border_color != blank -%}--dm-button-border-color: {{ border_color }}; {%- endif -%}
+{%- endcapture -%}
+{%- capture all_inline -%}{{ button_inline }}{{ custom_styles_inline }}{%- endcapture -%}
+<a
+  data-atom-type="button"
+  {% if bind != blank %}data-bind="{{ bind }}"{% endif %}
+  {% if action != blank and action != 'link' %}data-button-action="{{ action }}"{% if p != blank %} data-dm-product-id="{{ p.id }}"{% endif %}{% endif %}
+  href="{{ href | escape }}"
+  {% if target == '_blank' %}target="_blank" rel="noopener noreferrer"{% endif %}
+  {% if variant != blank %}data-button-variant="{{ variant }}"{% endif %}
+  {% if size != blank %}data-button-size="{{ size }}"{% endif %}
+  {%- comment -%} `shadow` is a Pattern A stop enum ("theme" emits nothing, so the
+     kit's per-frame dial applies); dm-theme.css `[data-shadow='md']` resolves it
+     into this atom's --dm-*-shadow slot. {%- endcomment -%}
+  {% if shadow != blank and shadow != 'theme' %}data-shadow="{{ shadow }}"{% endif %}
+  {% if size_sm != blank %}data-button-size-sm="{{ size_sm }}"{% endif %}
+  {% if width != blank %}data-button-width="{{ width }}"{% endif %}
+  {% if width_sm != blank %}data-button-width-sm="{{ width_sm }}"{% endif %}
+  {% if direction != blank %}data-button-direction="{{ direction }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</a>

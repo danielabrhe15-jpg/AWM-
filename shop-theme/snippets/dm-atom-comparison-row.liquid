@@ -1,0 +1,23 @@
+{%- comment -%}
+  Shared markup for the `comparison-row` atom (type `ComparisonRow`; renders as
+  the <dm-comparison-table-row> custom element) — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-comparison-row.liquid — as a Shopify theme block (shallow)
+    - the inline emitter              — as {% render %} inside a parent's
+                                        dm_inline setting past depth 8
+
+  Params are flat (Liquid has no object literal). Slot content (the label cell +
+  one value cell per product column, in order) arrives PRE-RENDERED as the
+  `children` string. A `composition` atom — it carries no universal
+  customStyles / margin / hideOn, only its own `kind`.
+
+  The row uses subgrid (declared in dm-theme.css) so its cells inherit the
+  table's column tracks; `data-comparison-row-kind` bands its typography.
+{%- endcomment -%}
+<dm-comparison-table-row
+  data-atom-type="comparison-table-row"
+  {% if kind != blank %}data-comparison-row-kind="{{ kind }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</dm-comparison-table-row>

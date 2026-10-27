@@ -1,0 +1,169 @@
+{%- comment -%}
+  Shared markup for the `cart-items` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-cart-items.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  DM Cart Items — storefront mirror of the CartItems clone repeater.
+
+  Renders an outer flex container with one `[data-cart-items-line]` wrapper
+  per cart line, multiplying the merchant-authored line template via
+  placeholder replacement — the cart analog of dm-option-picker.liquid's
+  per-value loop. Placeholders inside the line template (baked by
+  dm-text.liquid / dm-media.liquid from the `line.*` binds):
+    __DM_L_TITLE__       line product title
+    __DM_L_VARIANT__     variant title (empty for default-variant products)
+    __DM_L_QTY__         quantity
+    __DM_L_UNIT__        per-unit price after line discounts (money)
+    __DM_L_LINE__        line total after discounts (money)
+    __DM_L_ORIG_LINE__   line total before discounts (money, for the strike)
+    __DM_L_IMAGE__       line image url
+
+  The transpiler hoisted the line-template root atom (Group / Card) into
+  `item_attrs` + `item_inline` — the wrapper div below IS that root on the
+  storefront. Empty cart renders zero lines; the drawer's `emptyContent` body
+  owns the empty UI at the Sheet level (`{% if cart == empty %}`).
+
+  −/+/remove buttons inside carry `data-button-action="cart-*"`; dm-cart.js
+  delegates on them, resolving the target line from the enclosing
+  `[data-cart-line-key]`.
+{%- endcomment -%}
+
+
+{%- comment -%}
+  Capture the line template once — Shopify allows a single `content_for
+  'blocks'` per template; reuse it for every cart line below.
+{%- endcomment -%}
+
+
+{%- capture outer_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+{%- capture outer_attrs -%}
+    {% if direction != blank %}data-flex-direction="{{ direction }}"{% endif %}
+    {% if direction_sm != blank %}data-flex-direction-sm="{{ direction_sm }}"{% endif %}
+    {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+    {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+    {% if align != blank %}data-flex-align="{{ align }}"{% endif %}
+    {% if align_sm != blank %}data-flex-align-sm="{{ align_sm }}"{% endif %}
+    {{ custom_styles_attrs }}
+    {% if outer_inline != blank %}style="{{ outer_inline }}"{% endif %}
+    {{ shopify_attributes }}
+{%- endcapture -%}
+
+<dm-cart-items data-atom-type="cart-items" {{ outer_attrs }}>
+  {%- for item in cart.items -%}
+    {%- liquid
+      # Pre-escape each value into a var FIRST — chaining `| escape` onto the
+      # `replace` would escape the whole item_html string (mirrors dm-text.liquid).
+      assign line_title = item.product.title | escape
+      assign line_variant = ''
+      unless item.product.has_only_default_variant
+        assign line_variant = item.variant.title | escape
+      endunless
+
+      assign line_unit = item.final_price | money
+      assign line_total = item.final_line_price | money
+      assign line_orig = ''
+      if item.original_line_price > item.final_line_price
+        assign line_orig = item.original_line_price | money
+      endif
+
+      assign line_image = ''
+      if item.image != blank
+        assign line_image = item.image | img_url: '200x'
+      endif
+
+      # Compare-at (variant MSRP × qty) — strike, empty when no MSRP.
+      assign line_compare = ''
+      if item.variant.compare_at_price > item.variant.price
+        assign line_compare = item.variant.compare_at_price | times: item.quantity | money
+      endif
+
+      # Applied line discount — amount, percent, and name. Empty when none.
+      assign line_discount = ''
+      assign line_discount_pct = ''
+      assign line_discount_title = ''
+      if item.line_level_total_discount > 0
+        assign line_discount = item.line_level_total_discount | money
+        if item.original_line_price > 0
+          assign line_discount_pct = item.line_level_total_discount | times: 100.0 | divided_by: item.original_line_price | round | append: '%'
+        endif
+        assign first_alloc = item.line_level_discount_allocations | first
+        if first_alloc
+          assign line_discount_title = first_alloc.discount_application.title | escape
+        endif
+      endif
+
+      # Subscription — the selling-plan name (empty for one-time). The "is a sub"
+      # signal: a bound Text that only shows when non-empty.
+      assign line_plan = ''
+      if item.selling_plan_allocation
+        assign line_plan = item.selling_plan_allocation.selling_plan.name | escape
+      endif
+
+      assign item_html = item_template
+      assign item_html = item_html | replace: '__DM_L_TITLE__', line_title
+      assign item_html = item_html | replace: '__DM_L_VARIANT__', line_variant
+      assign item_html = item_html | replace: '__DM_L_QTY__', item.quantity
+      assign item_html = item_html | replace: '__DM_L_UNIT__', line_unit
+      assign item_html = item_html | replace: '__DM_L_LINE__', line_total
+      assign item_html = item_html | replace: '__DM_L_ORIG_LINE__', line_orig
+      assign item_html = item_html | replace: '__DM_L_COMPARE__', line_compare
+      assign item_html = item_html | replace: '__DM_L_DISCOUNT_PCT__', line_discount_pct
+      assign item_html = item_html | replace: '__DM_L_DISCOUNT_TITLE__', line_discount_title
+      assign item_html = item_html | replace: '__DM_L_DISCOUNT__', line_discount
+      assign item_html = item_html | replace: '__DM_L_PLAN__', line_plan
+      assign item_html = item_html | replace: '__DM_L_IMAGE__', line_image
+    -%}
+    <div
+      data-cart-items-line
+      data-cart-line-key="{{ item.key }}"
+      data-cart-line-variant-id="{{ item.variant_id }}"
+      data-cart-line-selling-plan="{{ item.selling_plan_allocation.selling_plan.id }}"
+      data-cart-line-bundle-tier="{{ item.properties._bar_id }}"
+      data-cart-line-index="{{ forloop.index }}"
+      {{ item_attrs }}
+      {% if item_inline != blank %}style="{{ item_inline }}"{% endif %}
+    >
+      {{ item_html }}
+    </div>
+  {%- endfor -%}
+
+  {%- comment -%}
+    Clonable line template for the optimistic add (dm-cart.js). Holds the line
+    markup with the RAW `__DM_L_*` tokens (NOT replaced — `item_template` is the
+    pre-loop capture, never mutated). On `/cart/add.js` dm-cart.js clones this,
+    fills the tokens from the response item client-side, appends the line + opens
+    the drawer INSTANTLY, then reconciles in place from the section re-render.
+    `__DM_L_*` tokens on the wrapper (key, variant id, selling plan, bar id,
+    index) are filled by dm-cart.js. A `<template>` is inert — its content is
+    never laid out and is excluded from `[data-cart-items-line]` queries, so the
+    rendered line count stays correct.
+  {%- endcomment -%}
+  <template data-cart-line-template>
+    <div
+      data-cart-items-line
+      data-cart-line-key="__DM_L_KEY__"
+      data-cart-line-variant-id="__DM_L_VARIANT_ID__"
+      data-cart-line-selling-plan="__DM_L_SELLING_PLAN__"
+      data-cart-line-bundle-tier="__DM_L_BAR_ID__"
+      data-cart-line-index="__DM_L_INDEX__"
+      {{ item_attrs }}
+      {% if item_inline != blank %}style="{{ item_inline }}"{% endif %}
+    >{{ item_template }}</div>
+  </template>
+</dm-cart-items>

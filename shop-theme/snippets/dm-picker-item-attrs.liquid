@@ -1,0 +1,68 @@
+{%- comment -%}
+  DM picker item attrs — self-stamp for a manual-OptionPicker bound Card.
+
+  Rendered by dm-card.liquid when the card carries a `bind` + `picker_option`
+  (published by the transpiler for Cards inside an OptionPicker with
+  `mode: "manual"`). Emits the same selection-attr string the clone-mode
+  wrapper div in dm-option-picker.liquid carries, so dm-option-picker.js
+  and the dm-theme.css derived states work identically across modes.
+
+  Params:
+    p             — the product (caller resolves `closest.product | default: product`)
+    picker_value  — the bound option value ("2 Pack")
+    picker_option — "option_1" | "option_2" | "option_3"
+
+  A bind matching no current option value stamps `data-option-value-stale`
+  — dm-theme.css hides it on the storefront (the click could never resolve
+  a variant).
+{%- endcomment -%}
+{%- if p == blank or picker_value == blank -%}
+  data-option-picker-item data-active="false"
+{%- else -%}
+  {%- liquid
+    assign option_idx = 0
+    if picker_option == 'option_2'
+      assign option_idx = 1
+    elsif picker_option == 'option_3'
+      assign option_idx = 2
+    endif
+    assign option = p.options_with_values[option_idx]
+  -%}
+  {%- if option == blank -%}
+    data-option-picker-item data-active="false" data-option-value-stale="true"
+  {%- else -%}
+    {%- liquid
+      assign value_exists = false
+      for v in option.values
+        assign v_str = v | append: ''
+        if v_str == picker_value
+          assign value_exists = true
+          break
+        endif
+      endfor
+
+      assign is_active = 'false'
+      assign selected_str = option.selected_value | append: ''
+      if selected_str == picker_value
+        assign is_active = 'true'
+      endif
+
+      # Available when ANY variant at this option-value is in stock —
+      # mirrors the clone loop in dm-option-picker.liquid.
+      assign is_available = 'false'
+      for v in p.variants
+        if option_idx == 0 and v.option1 == picker_value and v.available
+          assign is_available = 'true'
+          break
+        elsif option_idx == 1 and v.option2 == picker_value and v.available
+          assign is_available = 'true'
+          break
+        elsif option_idx == 2 and v.option3 == picker_value and v.available
+          assign is_available = 'true'
+          break
+        endif
+      endfor
+    -%}
+    data-option-picker-item data-variant-value="{{ picker_value | escape }}" data-variant-option-name="{{ option.name | escape }}" data-dm-product-id="{{ p.id }}" data-active="{{ is_active }}" data-variant-available="{{ is_available }}"{% unless value_exists %} data-option-value-stale="true"{% endunless %}
+  {%- endif -%}
+{%- endif -%}

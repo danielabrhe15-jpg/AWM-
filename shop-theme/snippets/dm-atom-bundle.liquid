@@ -1,0 +1,56 @@
+{%- comment -%}
+  Shared markup for the `bundle` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-bundle.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- assign p = closest.product | default: product -%}
+{%- capture all_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-bundle
+  {% if bundle_id != blank %}data-bundle-id="{{ bundle_id }}"{% endif %}
+  {%- comment -%} Product scope — dm-bundle.js / dm-dropmagic.js price the tiers
+     against this product's live variant (matches the ATC button's product). {%- endcomment -%}
+  {% if p != blank %}data-dm-product-id="{{ p.id }}"{% endif %}
+  {%- comment -%} Resolved tier data (shop_discounts.bar_items JSON) baked at
+     publish so dm-bundle.js can price + select tiers + build cart line props
+     without a storefront DB call. NO bars → the whole offer hides (`hidden`):
+     publish omits them when the bundle is INACTIVE (`shop_discounts.is_active`
+     — the shopify-app's kill switch, honored by both systems) or unresolved,
+     and the authored cards alone would show a fake, un-addable offer. The
+     `hidden` is decided here, not by a CSS rule on missing bars: the canvas
+     renderer (atoms/bundle/render.tsx) mirrors it from `is_active` outside
+     edit mode, and dm-theme.css enforces it over `display: flex`. {%- endcomment -%}
+  {% if bars != blank %}data-bars="{{ bars | escape }}"{% else %}hidden{% endif %}
+  {% if direction != blank %}data-flex-direction="{{ direction }}"{% endif %}
+  {% if direction_sm != blank %}data-flex-direction-sm="{{ direction_sm }}"{% endif %}
+  {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+  {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+  {% if align != blank %}data-flex-align="{{ align }}"{% endif %}
+  {% if align_sm != blank %}data-flex-align-sm="{{ align_sm }}"{% endif %}
+  {%- comment -%} Equal-width bar grid (the horizontal offer layout). The
+     renderer omits this for column direction, so it only ever arrives on a
+     row. {%- endcomment -%}
+  {% if columns != blank %}data-flex-columns="{{ columns }}"{% endif %}
+  {% if columns_sm != blank %}data-flex-columns-sm="{{ columns_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</dm-bundle>

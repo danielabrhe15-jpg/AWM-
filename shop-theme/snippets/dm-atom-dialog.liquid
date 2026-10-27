@@ -1,0 +1,68 @@
+{%- comment -%}
+  Shared markup for the `dialog` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-dialog.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  Dialog atom — root of a modal. Holds one DialogTrigger (the inline
+  clickable opener) and one DialogContent (the modal body), each a Shopify
+  static block placed by `{% content_for 'block', id: … %}`.
+
+  The overlay is authored here as a `<dm-dialog-overlay>` CHILD of
+  `<dm-dialog>`, but dm-dialog.js lifts it to `<body>` on first open so its
+  position:fixed escapes any transformed / overflow-clipped ancestor (a
+  carousel track, a sticky/overflow section). Open state + variant / size /
+  animation live on the overlay; dm-theme.css owns show/hide + animation off
+  it. Behavior (open / close / backdrop / Escape) lives in dm-dialog.js.
+  Mirrors `dialog/render.tsx`.
+
+  The close button is hardcoded chrome (a ✕) — `closing_icon` only
+  toggles whether it renders; full icon-family resolution is editor-side
+  only (the default `cross` is itself a ✕, so the storefront matches).
+
+  overlay_color rides the OVERLAY's own inline style (it can't inherit a var
+  off <dm-dialog> once relocated); merchant custom styles stay on the host.
+{%- endcomment -%}
+{%- capture overlay_inline -%}
+  {%- if overlay_color != blank -%}--dm-dialog-overlay: {{ overlay_color }};{%- endif -%}
+{%- endcapture -%}
+<dm-dialog
+  data-atom-type="dialog"
+  {{ custom_styles_attrs }}
+  {% if custom_styles_inline != blank %}style="{{ custom_styles_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ trigger_html }}
+  <dm-dialog-overlay
+    data-atom-type="dialog-overlay"
+    data-state="closed"
+    {% if variant != blank %}data-dialog-variant="{{ variant }}"{% endif %}
+    {% if size != blank %}data-dialog-size="{{ size }}"{% endif %}
+    {% if animation != blank %}data-dialog-animation="{{ animation }}"{% endif %}
+    {% if overlay_inline != blank %}style="{{ overlay_inline }}"{% endif %}
+  >
+    <div class="dm-dialog__panel">
+      {{ content_html }}
+      {%- if closing_icon != blank -%}
+        <button type="button" data-dm-dialog-close aria-label="Close" class="dm-dialog__close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true" width="100%" height="100%"><path fill="currentColor" d="M205.66 194.34a8 8 0 0 1-11.32 11.32L128 139.31l-66.34 66.35a8 8 0 0 1-11.32-11.32L116.69 128 50.34 61.66a8 8 0 0 1 11.32-11.32L128 116.69l66.34-66.35a8 8 0 0 1 11.32 11.32L139.31 128Z"/></svg>
+        </button>
+      {%- endif -%}
+    </div>
+  </dm-dialog-overlay>
+</dm-dialog>

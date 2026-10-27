@@ -1,0 +1,244 @@
+{%- comment -%}
+  `option-picker` — thin shim. The markup lives in snippets/dm-atom-option-picker.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only what a snippet CAN'T do:
+  `content_for` (template-source-only) and the schema block.
+{%- endcomment -%}
+{%- capture item_template -%}
+  {% content_for 'blocks' %}
+  {{ block.settings.dm_inline_item_template }}
+{%- endcapture -%}
+{% render 'dm-atom-option-picker',
+  option: block.settings.option,
+  mode: block.settings.mode,
+  direction: block.settings.direction,
+  direction_sm: block.settings.direction_sm,
+  gap: block.settings.gap,
+  gap_sm: block.settings.gap_sm,
+  align: block.settings.align,
+  align_sm: block.settings.align_sm,
+  justify: block.settings.justify,
+  justify_sm: block.settings.justify_sm,
+  wrap: block.settings.wrap,
+  wrap_sm: block.settings.wrap_sm,
+  item_attrs: block.settings.item_attrs,
+  item_inline: block.settings.item_inline,
+  swatches: block.settings.swatches,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes,
+  item_template: item_template %}
+
+{% schema %}
+{
+  "name": "DM Option Picker",
+  "tag": null,
+  "settings": [
+    {
+      "type": "select",
+      "id": "option",
+      "label": "Option",
+      "options": [
+        { "label": "Option 1", "value": "option_1" },
+        { "label": "Option 2", "value": "option_2" },
+        { "label": "Option 3", "value": "option_3" }
+      ],
+      "default": "option_1"
+    },
+    {
+      "type": "select",
+      "id": "mode",
+      "label": "Mode",
+      "options": [
+        { "label": "Clone per value", "value": "clone" },
+        { "label": "Manual cards", "value": "manual" }
+      ],
+      "default": "clone",
+      "info": "Clone — the item template multiplies once per option value. Manual — child blocks render as-is; each bound Card represents one value."
+    },
+    { "type": "header", "content": "Outer layout" },
+    {
+      "type": "select",
+      "id": "direction",
+      "label": "Direction",
+      "options": [
+        { "label": "Row", "value": "row" },
+        { "label": "Column", "value": "column" }
+      ],
+      "default": "row"
+    },
+    {
+      "type": "select",
+      "id": "direction_sm",
+      "label": "Direction (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Row", "value": "row" },
+        { "label": "Column", "value": "column" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "gap",
+      "label": "Gap",
+      "options": [
+        { "label": "0", "value": "0" },
+        { "label": "1", "value": "1" },
+        { "label": "2", "value": "2" },
+        { "label": "3", "value": "3" },
+        { "label": "4", "value": "4" },
+        { "label": "5", "value": "5" },
+        { "label": "6", "value": "6" },
+        { "label": "8", "value": "8" },
+        { "label": "10", "value": "10" },
+        { "label": "12", "value": "12" },
+        { "label": "16", "value": "16" },
+        { "label": "20", "value": "20" },
+        { "label": "24", "value": "24" }
+      ],
+      "default": "2"
+    },
+    {
+      "type": "select",
+      "id": "gap_sm",
+      "label": "Gap (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "0", "value": "0" },
+        { "label": "1", "value": "1" },
+        { "label": "2", "value": "2" },
+        { "label": "3", "value": "3" },
+        { "label": "4", "value": "4" },
+        { "label": "5", "value": "5" },
+        { "label": "6", "value": "6" },
+        { "label": "8", "value": "8" },
+        { "label": "10", "value": "10" },
+        { "label": "12", "value": "12" },
+        { "label": "16", "value": "16" },
+        { "label": "20", "value": "20" },
+        { "label": "24", "value": "24" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "align",
+      "label": "Align",
+      "options": [
+        { "label": "Start", "value": "start" },
+        { "label": "Center", "value": "center" },
+        { "label": "End", "value": "end" },
+        { "label": "Stretch", "value": "stretch" }
+      ],
+      "default": "stretch"
+    },
+    {
+      "type": "select",
+      "id": "align_sm",
+      "label": "Align (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Start", "value": "start" },
+        { "label": "Center", "value": "center" },
+        { "label": "End", "value": "end" },
+        { "label": "Stretch", "value": "stretch" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "justify",
+      "label": "Justify",
+      "options": [
+        { "label": "Start", "value": "start" },
+        { "label": "Center", "value": "center" },
+        { "label": "End", "value": "end" },
+        { "label": "Between", "value": "between" },
+        { "label": "Stretch", "value": "stretch" }
+      ],
+      "default": "start",
+      "info": "Start/Center/End/Between — cards hug their content. Stretch — cards share the row equally."
+    },
+    {
+      "type": "select",
+      "id": "justify_sm",
+      "label": "Justify (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Start", "value": "start" },
+        { "label": "Center", "value": "center" },
+        { "label": "End", "value": "end" },
+        { "label": "Between", "value": "between" },
+        { "label": "Stretch", "value": "stretch" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "wrap",
+      "label": "Wrap",
+      "options": [
+        { "label": "Nowrap", "value": "nowrap" },
+        { "label": "Wrap", "value": "wrap" }
+      ],
+      "default": "wrap"
+    },
+    {
+      "type": "select",
+      "id": "wrap_sm",
+      "label": "Wrap (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Nowrap", "value": "nowrap" },
+        { "label": "Wrap", "value": "wrap" }
+      ],
+      "default": ""
+    },
+    { "type": "header", "content": "Item root (hoisted Card / ColorSwatch)" },
+    {
+      "type": "textarea",
+      "id": "item_attrs",
+      "label": "Item root attrs",
+      "info": "Pre-rendered at publish from the item root atom (data-atom-type, padding, radius, flex layout / swatch size + shape, …). Managed by DropMagic — edit the root atom in the builder, not here."
+    },
+    {
+      "type": "textarea",
+      "id": "item_inline",
+      "label": "Item root inline style",
+      "info": "Pre-rendered inline CSS vars from the item root (--dm-card-bg, ring, shadow / swatch border, …). Managed by DropMagic."
+    },
+    {
+      "type": "textarea",
+      "id": "swatches",
+      "label": "Swatch colours",
+      "info": "Per-value colours as Value=#hex|Value=#hex, resolved at publish (merchant override, else the name guess). Empty falls back to reading the option value itself as a CSS colour name. Managed by DropMagic — set colours in the builder's product panel."
+    },
+    { "type": "header", "content": "Advanced" },
+        {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "liquid",
+      "id": "dm_inline_item_template",
+      "label": "Inlined item_template (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [
+    { "name": "DM Option Picker" }
+  ],
+  "blocks": [
+    { "type": "@theme" }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,264 @@
+{%- comment -%}
+  Generic DropMagic section. Used by the published header-group /
+  footer-group JSONs as the type for every top-level Section atom that
+  comes from `stores.header_tree` / `stores.footer_tree`. The merchant's
+  Section atom IS the section here; its child atoms come through as blocks.
+
+  The section markup lives in the shared snippet `dm-section-render` (also
+  used by blocks/dm-section.liquid for body sections) so the two can't
+  drift. This file passes `section.settings` + `section.id` (the sticky
+  unwrap needs the wrapper id) and owns only the {% schema %} below
+  (Shopify can't share schema across section + block files).
+
+  No CSS / runtime-script imports — those live in `dm-page.liquid`, which is
+  rendered by every page template that uses DropMagic. Section groups
+  inherit the styles loaded in the body via the page template (modern
+  browsers apply CSS regardless of declaration order in the document).
+{%- endcomment -%}
+{%- capture children -%}
+  {% content_for 'blocks' %}
+{%- endcapture -%}
+{% render 'dm-section-render',
+  s: section.settings,
+  children: children,
+  sticky_wrapper_id: section.id %}
+
+{% schema %}
+{
+  "name": "DM Section",
+  "tag": "section",
+  "blocks": [{ "type": "@theme" }, { "type": "@app" }],
+  "settings": [
+    {
+      "type": "select",
+      "id": "combination",
+      "label": "Color Scheme",
+      "options": [
+        { "label": "White", "value": "white" },
+        { "label": "Light", "value": "light" },
+        { "label": "Neutral", "value": "neutral" },
+        { "label": "Tinted", "value": "tinted" },
+        { "label": "Tinted secondary", "value": "tinted-secondary" },
+        { "label": "Vibrant", "value": "vibrant" },
+        { "label": "Dark", "value": "dark" },
+        { "label": "Gradient", "value": "gradient" }
+      ],
+      "default": "white"
+    },
+    {
+      "type": "select",
+      "id": "sticky",
+      "label": "Sticky",
+      "options": [
+        { "value": "relative", "label": "Off" },
+        { "value": "sticky", "label": "Sticky" },
+        { "value": "sticky-scroll", "label": "Sticky on scroll" }
+      ],
+      "default": "relative"
+    },
+    { "type": "text", "id": "padding_top", "label": "Padding Top", "default": "16" },
+    { "type": "text", "id": "padding_top_sm", "label": "Padding Top (Mobile)" },
+    { "type": "text", "id": "padding_bottom", "label": "Padding Bottom", "default": "16" },
+    { "type": "text", "id": "padding_bottom_sm", "label": "Padding Bottom (Mobile)" },
+    { "type": "text", "id": "padding_left", "label": "Padding Left", "default": "4" },
+    { "type": "text", "id": "padding_left_sm", "label": "Padding Left (Mobile)" },
+    { "type": "text", "id": "padding_right", "label": "Padding Right", "default": "4" },
+    { "type": "text", "id": "padding_right_sm", "label": "Padding Right (Mobile)" },
+    {
+      "type": "select",
+      "id": "max_width",
+      "label": "Max Width",
+      "options": [
+        { "label": "Theme", "value": "theme" },
+        { "label": "None", "value": "none" },
+        { "label": "Sm", "value": "sm" },
+        { "label": "Md", "value": "md" },
+        { "label": "Lg", "value": "lg" },
+        { "label": "Xl", "value": "xl" },
+        { "label": "2xl", "value": "2xl" }
+      ],
+      "default": "theme"
+    },
+    {
+      "type": "select",
+      "id": "max_width_sm",
+      "label": "Max Width (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Theme", "value": "theme" },
+        { "label": "None", "value": "none" },
+        { "label": "Sm", "value": "sm" },
+        { "label": "Md", "value": "md" },
+        { "label": "Lg", "value": "lg" },
+        { "label": "Xl", "value": "xl" },
+        { "label": "2xl", "value": "2xl" }
+      ],
+      "default": ""
+    },
+    { "type": "text", "id": "min_height", "label": "Min Height", "default": "auto" },
+    { "type": "text", "id": "min_height_sm", "label": "Min Height (Mobile)" },
+    { "type": "text", "id": "background_color", "label": "Background Color" },
+    { "type": "text", "id": "background_image", "label": "Background Image", "default": "auto" },
+    { "type": "text", "id": "background_image_sm", "label": "Background Image (Mobile)" },
+    {
+      "type": "select",
+      "id": "background_position",
+      "label": "Background Position",
+      "options": [
+        { "label": "Center", "value": "center" },
+        { "label": "Top", "value": "top" },
+        { "label": "Bottom", "value": "bottom" },
+        { "label": "Left", "value": "left" },
+        { "label": "Right", "value": "right" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "background_size",
+      "label": "Background Size",
+      "options": [
+        { "label": "Cover", "value": "cover" },
+        { "label": "Contain", "value": "contain" }
+      ],
+      "default": "cover"
+    },
+    {
+      "type": "select",
+      "id": "background_overlay",
+      "label": "Background Overlay",
+      "options": [
+        { "label": "None", "value": "none" },
+        { "label": "Light", "value": "light" },
+        { "label": "Medium", "value": "medium" },
+        { "label": "Dark", "value": "dark" },
+        { "label": "Heavy", "value": "heavy" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "select",
+      "id": "background_overlay_sm",
+      "label": "Background Overlay (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "None", "value": "none" },
+        { "label": "Light", "value": "light" },
+        { "label": "Medium", "value": "medium" },
+        { "label": "Dark", "value": "dark" },
+        { "label": "Heavy", "value": "heavy" }
+      ],
+      "default": ""
+    },
+    { "type": "text", "id": "background_overlay_color", "label": "Overlay Color" },
+    {
+      "type": "select",
+      "id": "mask_top",
+      "label": "Top Mask",
+      "options": [
+        { "label": "None", "value": "none" },
+        { "label": "Simple waves", "value": "simple-waves" },
+        { "label": "Multiple waves", "value": "multiple-waves" },
+        { "label": "Smooth waves", "value": "smooth-waves" },
+        { "label": "Ripple waves", "value": "ripple-waves" },
+        { "label": "Simple scallop", "value": "simple-scallop" },
+        { "label": "Rounded scallop", "value": "rounded-scallop" },
+        { "label": "Cloud pattern", "value": "cloud-pattern" },
+        { "label": "Soft curves", "value": "soft-curves" },
+        { "label": "Triangle pattern", "value": "triangle-pattern" },
+        { "label": "Diamond chain", "value": "diamond-chain" },
+        { "label": "Zig zag line", "value": "zig-zag-line" },
+        { "label": "Rounded arc", "value": "rounded-arc" },
+        { "label": "Simple slope left", "value": "simple-slope-left" },
+        { "label": "Simple slope right", "value": "simple-slope-right" },
+        { "label": "Double slope", "value": "double-slope" },
+        { "label": "Basic waves", "value": "basic-waves" },
+        { "label": "Single arc", "value": "single-arc" },
+        { "label": "Paint", "value": "paint" },
+        { "label": "Multiple bubbles", "value": "multiple-bubbles" },
+        { "label": "Industrial", "value": "industrial" }
+      ],
+      "default": "none"
+    },
+    { "type": "text", "id": "mask_top_height", "label": "Top Mask Height", "default": "md" },
+    {
+      "type": "select",
+      "id": "mask_bottom",
+      "label": "Bottom Mask",
+      "options": [
+        { "label": "None", "value": "none" },
+        { "label": "Simple waves", "value": "simple-waves" },
+        { "label": "Multiple waves", "value": "multiple-waves" },
+        { "label": "Smooth waves", "value": "smooth-waves" },
+        { "label": "Ripple waves", "value": "ripple-waves" },
+        { "label": "Simple scallop", "value": "simple-scallop" },
+        { "label": "Rounded scallop", "value": "rounded-scallop" },
+        { "label": "Cloud pattern", "value": "cloud-pattern" },
+        { "label": "Soft curves", "value": "soft-curves" },
+        { "label": "Triangle pattern", "value": "triangle-pattern" },
+        { "label": "Diamond chain", "value": "diamond-chain" },
+        { "label": "Zig zag line", "value": "zig-zag-line" },
+        { "label": "Rounded arc", "value": "rounded-arc" },
+        { "label": "Simple slope left", "value": "simple-slope-left" },
+        { "label": "Simple slope right", "value": "simple-slope-right" },
+        { "label": "Double slope", "value": "double-slope" },
+        { "label": "Basic waves", "value": "basic-waves" },
+        { "label": "Single arc", "value": "single-arc" },
+        { "label": "Paint", "value": "paint" },
+        { "label": "Multiple bubbles", "value": "multiple-bubbles" },
+        { "label": "Industrial", "value": "industrial" }
+      ],
+      "default": "none"
+    },
+    { "type": "text", "id": "mask_bottom_height", "label": "Bottom Mask Height", "default": "md" },
+    {
+      "type": "select",
+      "id": "template_type",
+      "label": "Template Type",
+      "default": "generic",
+      "options": [
+        { "value": "hero", "label": "Hero" },
+        { "value": "product-hero", "label": "Product Hero" },
+        { "value": "features", "label": "Features" },
+        { "value": "testimonials", "label": "Testimonials" },
+        { "value": "faq", "label": "FAQ" },
+        { "value": "cta", "label": "Call to Action" },
+        { "value": "image-text", "label": "Image + Text" },
+        { "value": "carousel", "label": "Carousel" },
+        { "value": "marquee", "label": "Marquee" },
+        { "value": "generic", "label": "Generic" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    { "type": "header", "content": "Dynamic context" },
+    {
+      "type": "select",
+      "id": "dynamic_context",
+      "label": "Dynamic context",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "product", "label": "Product" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "product",
+      "id": "selected_product",
+      "label": "Product",
+      "info": "Used by descendant blocks via closest.product. Leave empty on a product page to use the page's product. Only applies when Dynamic context = Product."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,66 @@
+{%- comment -%}
+  DM Cart Drawer — the sidecart section, folded into footer-group.json by the
+  publish transpiler (treeToShopifySectionGroup, footer only) so it renders on
+  EVERY page: the cart trigger lives in the global header, so the drawer must
+  be available on collection / cart / blog / search pages too.
+
+  It wraps a single DM Sheet block (openOn:cart). dm-cart.js opens it on cart
+  events; the Sheet's own overlay/panel CSS (off `data-state`, in dm-theme.css)
+  owns the fixed-overlay positioning, so this section needs no bespoke CSS. The
+  `shopify-section` wrapper (`tag: div` — sections require a string tag) has no
+  layout effect: closed = zero height, open = the Sheet's fixed overlay escapes
+  it. Section Rendering API refreshes (dm-cart.js) re-run the
+  `{% for item in cart.items %}` loop + cart-goal fill inside.
+
+  Section groups normally inherit dm-theme.css + the dm-*.js runtimes from
+  dm-page.liquid (the body template) — but dm-page only renders on DM pages,
+  and the drawer must work everywhere. So this section loads the subset it
+  needs itself. On DM pages these duplicate dm-page's loads; the browser dedupes
+  by asset URL and each runtime's init-flag guard makes re-injection a no-op.
+
+  `dm-chrome.liquid` now applies the same rule to the header group, so its
+  declaration usually lands earlier in the document than this one. Keep this one
+  anyway: the two files reach a theme by different routes (engine push vs
+  publish), so neither can assume the other is present. See `dm-chrome.liquid`.
+{%- endcomment -%}
+{{ 'dm-theme.css' | asset_url | stylesheet_tag }}
+{{ 'dm-theme-vars.css' | asset_url | stylesheet_tag }}
+{% render 'dm-fonts' %}
+
+{%- comment -%}
+  Shop money format → window.dropmagic.formatMoney (dm-dropmagic.js reads this).
+  Lets the cart drawer's optimistic render format cents client-side with no
+  server round-trip. Emitted here so it's on every page the drawer renders.
+{%- endcomment -%}
+<script type="application/json" data-dm-money-format>{{ shop.money_format | json }}</script>
+
+{% content_for 'blocks' %}
+
+<script src="{{ 'dm-dropmagic.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-sheet.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-progress-bar.js' | asset_url }}" defer></script>
+<script src="{{ 'dm-cart.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "DM Cart Drawer",
+  "tag": "div",
+  "blocks": [{ "type": "@theme" }],
+  "settings": [
+    {
+      "type": "number",
+      "id": "goal_amount",
+      "label": "Free-shipping goal",
+      "info": "Threshold in cents (subtotal) or item count (quantity). Set by DropMagic from the store's cart reward settings. The nested cart-goal bar + `cart.goal_*` text binds read this."
+    },
+    {
+      "type": "text",
+      "id": "goal_type",
+      "label": "Goal type",
+      "info": "`subtotal` (cents) or `quantity` (item count). Set by DropMagic.",
+      "default": "subtotal"
+    }
+  ],
+  "presets": [{ "name": "DM Cart Drawer" }]
+}
+{% endschema %}

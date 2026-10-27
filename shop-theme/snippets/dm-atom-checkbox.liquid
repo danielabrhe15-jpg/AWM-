@@ -1,0 +1,122 @@
+{%- comment -%}
+  Shared markup for the `checkbox` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-checkbox.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- comment -%}
+  DM Checkbox — storefront mirror. The clickable provider (the <label>
+  equivalent): a flex container holding a CheckboxIndicator + label/content.
+  dm-checkbox.js toggles `data-checked` on click + emits dm:checkbox-changed;
+  `action: toggle-subscription` also drives the cart via dm.setSellingPlan.
+  Layout rides the shared [data-flex-*] rules; the box/check is the
+  CheckboxIndicator sub-atom.
+
+  Plan resolution mirrors `resolveCheckboxPlan` (checkbox/plan.ts): the
+  authored `plan` id when it still matches a live plan, else the product's
+  FIRST plan. Keep the two in step — a merchant who picks a plan in the
+  builder must get that plan on the storefront.
+
+  A subscription checkbox is also a plan PROVIDER, exactly like a bound
+  SellingPlanPicker card: it fills the inner `__DM_SP_*` placeholders with
+  this plan's price for the default variant, so `selling_plan.*` Text binds
+  render inside the club card (dm-dropmagic.js re-syncs them on variant
+  change). Without this the tokens would ship raw into the page.
+{%- endcomment -%}
+{%- liquid
+  assign p = closest.product | default: product
+  assign sub_plan = nil
+  if action == 'toggle-subscription'
+    for grp in p.selling_plan_groups
+      for pl in grp.selling_plans
+        assign pid = pl.id | append: ''
+        if plan != blank and pid == plan
+          assign sub_plan = pl
+          assign sub_group = grp
+          break
+        endif
+        if sub_first == nil
+          assign sub_first = pl
+          assign sub_first_group = grp
+        endif
+      endfor
+      if sub_plan != nil
+        break
+      endif
+    endfor
+    if sub_plan == nil
+      assign sub_plan = sub_first
+      assign sub_group = sub_first_group
+    endif
+  endif
+-%}
+{%- if sub_plan != nil -%}
+  {%- liquid
+    assign sp_variant = p.selected_or_first_available_variant
+    assign sp_price = ''
+    assign sp_compare = ''
+    assign sp_savings = ''
+    assign sp_savings_pct = ''
+    assign sub_plan_id = sub_plan.id | append: ''
+    assign sp_alloc = nil
+    if sp_variant != blank
+      for a in sp_variant.selling_plan_allocations
+        assign aid = a.selling_plan.id | append: ''
+        if aid == sub_plan_id
+          assign sp_alloc = a
+          break
+        endif
+      endfor
+    endif
+    if sp_alloc != nil
+      assign sp_price = sp_alloc.price | money
+      assign sp_compare = sp_variant.price | money
+      assign sp_saved = sp_variant.price | minus: sp_alloc.price
+      if sp_saved > 0
+        assign sp_savings = sp_saved | money
+        assign sp_savings_pct = sp_saved | times: 100.0 | divided_by: sp_variant.price | round | append: '%'
+      endif
+    endif
+    assign children = children | replace: '__DM_SP_NAME__', sub_plan.name | replace: '__DM_SP_GROUP__', sub_group.name | replace: '__DM_SP_PRICE__', sp_price | replace: '__DM_SP_COMPARE__', sp_compare | replace: '__DM_SP_SAVINGS_VAL__', sp_savings | replace: '__DM_SP_SAVINGS_PCT__', sp_savings_pct
+  -%}
+{%- endif -%}
+
+{%- capture outer_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-checkbox data-atom-type="checkbox"
+  {% if checked != blank %}data-checked="{{ checked }}"{% else %}data-checked="false"{% endif %}
+  {% if action != blank %}data-checkbox-action="{{ action }}"{% endif %}
+  {% if value != blank %}data-value="{{ value }}"{% endif %}
+  {% if action == 'toggle-subscription' and p != blank %}data-dm-product-id="{{ p.id }}"{% endif %}
+  {% if sub_plan != nil %}data-selling-plan-id="{{ sub_plan.id }}"{% endif %}
+  {% if direction != blank %}data-flex-direction="{{ direction }}"{% endif %}
+  {% if direction_sm != blank %}data-flex-direction-sm="{{ direction_sm }}"{% endif %}
+  {% if gap != blank %}data-flex-gap="{{ gap }}"{% endif %}
+  {% if gap_sm != blank %}data-flex-gap-sm="{{ gap_sm }}"{% endif %}
+  {% if align != blank %}data-flex-align="{{ align }}"{% endif %}
+  {% if align_sm != blank %}data-flex-align-sm="{{ align_sm }}"{% endif %}
+  {% if justify != blank %}data-flex-justify="{{ justify }}"{% endif %}
+  {% if justify_sm != blank %}data-flex-justify-sm="{{ justify_sm }}"{% endif %}
+  {% if wrap != blank %}data-flex-wrap="{{ wrap }}"{% endif %}
+  {% if wrap_sm != blank %}data-flex-wrap-sm="{{ wrap_sm }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if outer_inline != blank %}style="{{ outer_inline }}"{% endif %}
+  {% if margin_top != blank and margin_top != '0' %}data-mt="{{ margin_top }}"{% endif %}
+  {% if margin_top_sm != blank and margin_top_sm != '0' %}data-mt-sm="{{ margin_top_sm }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</dm-checkbox>

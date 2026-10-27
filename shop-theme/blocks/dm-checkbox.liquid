@@ -1,0 +1,182 @@
+{%- comment -%}
+  `checkbox` — thin shim. The markup lives in snippets/dm-atom-checkbox.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only what a snippet CAN'T do:
+  `content_for` (template-source-only) and the schema block.
+{%- endcomment -%}
+{%- capture children -%}
+  {% content_for 'blocks' %}
+  {{ block.settings.dm_inline_children }}
+{%- endcapture -%}
+{% render 'dm-atom-checkbox',
+  action: block.settings.action,
+  checked: block.settings.checked,
+  value: block.settings.value,
+  plan: block.settings.plan,
+  direction: block.settings.direction,
+  direction_sm: block.settings.direction_sm,
+  gap: block.settings.gap,
+  gap_sm: block.settings.gap_sm,
+  align: block.settings.align,
+  align_sm: block.settings.align_sm,
+  justify: block.settings.justify,
+  justify_sm: block.settings.justify_sm,
+  wrap: block.settings.wrap,
+  wrap_sm: block.settings.wrap_sm,
+  margin_top: block.settings.margin_top,
+  margin_top_sm: block.settings.margin_top_sm,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes,
+  children: children %}
+
+{% schema %}
+{
+  "name": "DM Checkbox",
+  "tag": null,
+  "settings": [
+    {
+      "type": "select",
+      "id": "action",
+      "label": "On toggle",
+      "options": [
+        { "label": "None (emit only)", "value": "none" },
+        { "label": "Toggle subscription", "value": "toggle-subscription" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "select",
+      "id": "checked",
+      "label": "Checked by default",
+      "options": [
+        { "label": "True", "value": "true" },
+        { "label": "False", "value": "false" }
+      ],
+      "default": "false"
+    },
+    { "type": "text", "id": "value", "label": "Value" },
+    { "type": "text", "id": "plan", "label": "Plan ID" },
+    { "type": "header", "content": "Layout" },
+    {
+      "type": "select",
+      "id": "direction",
+      "label": "Direction",
+      "options": [
+        { "label": "Row", "value": "row" },
+        { "label": "Column", "value": "column" }
+      ],
+      "default": "row"
+    },
+    {
+      "type": "select",
+      "id": "direction_sm",
+      "label": "Direction (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Row", "value": "row" },
+        { "label": "Column", "value": "column" }
+      ],
+      "default": ""
+    },
+    { "type": "text", "id": "gap", "label": "Gap", "default": "2" },
+    { "type": "text", "id": "gap_sm", "label": "Gap (Mobile)" },
+    {
+      "type": "select",
+      "id": "align",
+      "label": "Align",
+      "options": [
+        { "label": "Start", "value": "start" },
+        { "label": "Center", "value": "center" },
+        { "label": "End", "value": "end" },
+        { "label": "Stretch", "value": "stretch" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "align_sm",
+      "label": "Align (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Start", "value": "start" },
+        { "label": "Center", "value": "center" },
+        { "label": "End", "value": "end" },
+        { "label": "Stretch", "value": "stretch" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "justify",
+      "label": "Justify",
+      "options": [
+        { "label": "Start", "value": "start" },
+        { "label": "Center", "value": "center" },
+        { "label": "End", "value": "end" },
+        { "label": "Between", "value": "between" },
+        { "label": "Stretch", "value": "stretch" }
+      ],
+      "default": "start"
+    },
+    {
+      "type": "select",
+      "id": "justify_sm",
+      "label": "Justify (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Start", "value": "start" },
+        { "label": "Center", "value": "center" },
+        { "label": "End", "value": "end" },
+        { "label": "Between", "value": "between" },
+        { "label": "Stretch", "value": "stretch" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "wrap",
+      "label": "Wrap",
+      "options": [
+        { "label": "Nowrap", "value": "nowrap" },
+        { "label": "Wrap", "value": "wrap" }
+      ],
+      "default": "nowrap"
+    },
+    {
+      "type": "select",
+      "id": "wrap_sm",
+      "label": "Wrap (Mobile)",
+      "options": [
+        { "label": "—", "value": "" },
+        { "label": "Nowrap", "value": "nowrap" },
+        { "label": "Wrap", "value": "wrap" }
+      ],
+      "default": ""
+    },
+    { "type": "text", "id": "margin_top", "label": "Margin Top" },
+    { "type": "text", "id": "margin_top_sm", "label": "Margin Top (Mobile)" },
+    { "type": "header", "content": "Advanced" },
+    {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "liquid",
+      "id": "dm_inline_children",
+      "label": "Inlined children (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [{ "name": "DM Checkbox" }],
+  "blocks": [{ "type": "@theme" }]
+}
+{% endschema %}

@@ -1,0 +1,42 @@
+{%- comment -%}
+  Shared markup for the `carousel` atom — the single source of truth for
+  what this atom renders. Two callers, and they must not drift:
+    - blocks/dm-carousel.liquid  — as a Shopify theme block (shallow)
+    - the inline emitter        — as {% render %} inside a parent's
+                                  dm_inline setting, when nesting would
+                                  otherwise blow Shopify's depth cap of 8
+
+  Params are flat (not a settings object) because Liquid has no object
+  literal, so the inline emitter can only pass key: value pairs.
+  Slot content arrives PRE-RENDERED as string params (children, …): a
+  snippet can never run `content_for`, so the caller captures it.
+
+  No defaults here, deliberately. A {% schema %} `default` is an EDITOR
+  seed — it populates the JSON when a merchant adds a block — NOT a
+  render-time fallback. Our templates are machine-generated, so a setting
+  the emitter omits (`omitValue`) is simply absent and reads blank. Both
+  callers take their values from that same emitter map, so re-declaring
+  defaults here would invent attributes that never render today.
+{%- endcomment -%}
+{%- capture all_inline -%}{{ custom_styles_inline }}{%- endcapture -%}
+<dm-carousel
+  {% if slides_per_view != blank %}data-carousel-slides-per-view="{{ slides_per_view }}"{% endif %}
+  {% if slides_per_view_sm != blank %}data-carousel-slides-per-view-sm="{{ slides_per_view_sm }}"{% endif %}
+  {% if space_between != blank %}data-carousel-space-between="{{ space_between }}"{% endif %}
+  {% if space_between_sm != blank %}data-carousel-space-between-sm="{{ space_between_sm }}"{% endif %}
+  {% if speed != blank %}data-carousel-speed="{{ speed }}"{% endif %}
+  {% if loop != blank %}data-carousel-loop="{{ loop }}"{% endif %}
+  {% if autoplay != blank %}data-carousel-autoplay="{{ autoplay }}"{% endif %}
+  {% if autoplay_delay != blank %}data-carousel-autoplay-delay="{{ autoplay_delay }}"{% endif %}
+  {% if effect != blank %}data-carousel-effect="{{ effect }}"{% endif %}
+  {% if centered != blank %}data-carousel-centered="{{ centered }}"{% endif %}
+  {% if direction != blank %}data-carousel-direction="{{ direction }}"{% endif %}
+  {% if navigation != blank %}data-carousel-navigation="{{ navigation }}"{% endif %}
+  {% if pagination != blank %}data-carousel-pagination="{{ pagination }}"{% endif %}
+  {% if pause_on_hover != blank %}data-carousel-pause-on-hover="{{ pause_on_hover }}"{% endif %}
+  {{ custom_styles_attrs }}
+  {% if all_inline != blank %}style="{{ all_inline }}"{% endif %}
+  {{ shopify_attributes }}
+>
+  {{ children }}
+</dm-carousel>

@@ -1,0 +1,297 @@
+{%- comment -%}
+  `media` — thin shim. The markup lives in snippets/dm-atom-media.liquid,
+  shared with the inline emitter so a deep tree renders identically without
+  spending a block level. This file owns only what a snippet CAN'T do:
+  `content_for` (template-source-only) and the schema block.
+{%- endcomment -%}
+{% render 'dm-atom-media',
+  src: block.settings.src,
+  alt: block.settings.alt,
+  poster: block.settings.poster,
+  aspect_ratio: block.settings.aspect_ratio,
+  aspect_ratio_sm: block.settings.aspect_ratio_sm,
+  max_width: block.settings.max_width,
+  height: block.settings.height,
+  object_position: block.settings.object_position,
+  radius: block.settings.radius,
+  border_width: block.settings.border_width,
+  border_color: block.settings.border_color,
+  shadow: block.settings.shadow,
+  overlay: block.settings.overlay,
+  video_style: block.settings.video_style,
+  bind: block.settings.bind,
+  slide_variant_ids: block.settings.slide_variant_ids,
+  product_media_pos: block.settings.product_media_pos,
+  margin_top: block.settings.margin_top,
+  margin_top_sm: block.settings.margin_top_sm,
+  custom_styles_attrs: block.settings.custom_styles_attrs,
+  custom_styles_inline: block.settings.custom_styles_inline,
+  shopify_attributes: block.shopify_attributes %}
+
+{% schema %}
+{
+  "name": "DM Media",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "src",
+      "label": "Source URL",
+      "default": "https://placehold.co/800x400/e2e8f0/64748b?text=Image"
+    },
+    {
+      "type": "text",
+      "id": "alt",
+      "label": "Alt Text",
+      "default": "auto"
+    },
+    {
+      "type": "text",
+      "id": "poster",
+      "label": "Video Poster",
+      "default": "auto"
+    },
+    {
+      "type": "select",
+      "id": "aspect_ratio",
+      "label": "Ratio",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto"
+        },
+        {
+          "label": "1/1",
+          "value": "1/1"
+        },
+        {
+          "label": "4/3",
+          "value": "4/3"
+        },
+        {
+          "label": "3/2",
+          "value": "3/2"
+        },
+        {
+          "label": "16/9",
+          "value": "16/9"
+        },
+        {
+          "label": "2/1",
+          "value": "2/1"
+        },
+        {
+          "label": "2/3",
+          "value": "2/3"
+        },
+        {
+          "label": "3/4",
+          "value": "3/4"
+        }
+      ],
+      "default": "1/1"
+    },
+    {
+      "type": "select",
+      "id": "aspect_ratio_sm",
+      "label": "Ratio (Mobile)",
+      "options": [
+        {
+          "label": "—",
+          "value": ""
+        },
+        {
+          "label": "Auto",
+          "value": "auto"
+        },
+        {
+          "label": "1/1",
+          "value": "1/1"
+        },
+        {
+          "label": "4/3",
+          "value": "4/3"
+        },
+        {
+          "label": "3/2",
+          "value": "3/2"
+        },
+        {
+          "label": "16/9",
+          "value": "16/9"
+        },
+        {
+          "label": "2/1",
+          "value": "2/1"
+        },
+        {
+          "label": "2/3",
+          "value": "2/3"
+        },
+        {
+          "label": "3/4",
+          "value": "3/4"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "number",
+      "id": "max_width",
+      "label": "Max Width"
+    },
+    {
+      "type": "number",
+      "id": "height",
+      "label": "Height"
+    },
+    {
+      "type": "select",
+      "id": "object_position",
+      "label": "Position",
+      "options": [
+        {
+          "label": "Center",
+          "value": "center"
+        },
+        {
+          "label": "Top",
+          "value": "top"
+        },
+        {
+          "label": "Bottom",
+          "value": "bottom"
+        },
+        {
+          "label": "Left",
+          "value": "left"
+        },
+        {
+          "label": "Right",
+          "value": "right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "radius",
+      "label": "Radius",
+      "info": "Border-radius scale token. Resolves to the brand-kit's --dm-radius-* values.",
+      "options": [
+        { "label": "None", "value": "none" },
+        { "label": "Xs", "value": "xs" },
+        { "label": "Sm", "value": "sm" },
+        { "label": "Md", "value": "md" },
+        { "label": "Lg", "value": "lg" },
+        { "label": "Xl", "value": "xl" }
+      ],
+      "default": "md"
+    },
+    {
+      "type": "text",
+      "id": "border_width",
+      "label": "Border width"
+    },
+    {
+      "type": "text",
+      "id": "border_color",
+      "label": "Border color"
+    },
+    {
+      "type": "text",
+      "id": "shadow",
+      "label": "Shadow"
+    },
+    {
+      "type": "text",
+      "id": "overlay",
+      "label": "Overlay",
+      "info": "CSS color or gradient painted over the media (e.g. rgba(0,0,0,0.45) or linear-gradient(to bottom, rgba(0,0,0,0.7), transparent 30%))."
+    },
+    {
+      "type": "select",
+      "id": "video_style",
+      "label": "Video Style",
+      "options": [
+        {
+          "label": "Silent",
+          "value": "silent"
+        },
+        {
+          "label": "Minimal",
+          "value": "minimal"
+        },
+        {
+          "label": "Native",
+          "value": "native"
+        }
+      ],
+      "default": "minimal"
+    },
+    {
+      "type": "select",
+      "id": "bind",
+      "label": "Dynamic image",
+      "options": [
+        {
+          "value": "",
+          "label": "None (static src)"
+        },
+        {
+          "value": "product.image",
+          "label": "Product featured image"
+        },
+        {
+          "value": "variant.image",
+          "label": "Variant featured image"
+        },
+        {
+          "value": "product.media.image",
+          "label": "Product media (carousel slide)"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "number",
+      "id": "product_media_pos",
+      "label": "Product media position (auto)",
+      "info": "1-based position of this slide among the product's image media — set by the gallery fill. Resolved to the live media id at render. Fallback for variant sync when slide_variant_ids is empty. NOTE: Shopify DROPS any setting missing from this schema, so removing it silently unpublishes the attribute."
+    },
+    {
+      "type": "text",
+      "id": "slide_variant_ids",
+      "label": "Slide variant ids (auto)",
+      "info": "Comma-separated variant ids this gallery slide is the featured image for — stamped at publish. Read by the variant→carousel sync. Replaced product_media_pos, which resolved a position against the live product's media order and broke whenever that order diverged."
+    },
+    {
+      "type": "text",
+      "id": "margin_top",
+      "label": "Margin Top"
+    },
+    {
+      "type": "text",
+      "id": "margin_top_sm",
+      "label": "Margin Top (Mobile)"
+    },
+        {
+      "type": "textarea",
+      "id": "custom_styles_attrs",
+      "label": "Custom styles — data attributes (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    },
+    {
+      "type": "textarea",
+      "id": "custom_styles_inline",
+      "label": "Custom styles — inline CSS (auto)",
+      "info": "Auto-generated by DropMagic at publish time. Do not edit manually."
+    }
+  ],
+  "presets": [
+    {
+      "name": "DM Media"
+    }
+  ]
+}
+{% endschema %}
